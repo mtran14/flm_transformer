@@ -64,10 +64,10 @@ def get_upstream_args():
     if args.resume is None:
         assert args.run is not None and args.config is not None, '`--run` and `--config` must be given if `--resume` is not provided'
         setattr(args, 'gpu', not args.cpu)
-        config = yaml.load(open(args.config, 'r'), Loader=yaml.FullLoader)
+        config = yaml.load(open(args.config, 'r'), Loader=yaml.Loader)
         parse_prune_heads(config)
         if args.online_config is not None:
-            online_config = yaml.load(open(args.online_config, 'r'), Loader=yaml.FullLoader)
+            online_config = yaml.load(open(args.online_config, 'r'), Loader=yaml.Loader)
             config['online'] = online_config
     else:
         if os.path.isdir(args.resume):
@@ -103,7 +103,7 @@ def get_dataloader(args, config):
     print('[run_upstream] - getting train dataloader...')
 
     # select mode
-    load = 'duo' if bool(config['runner']['duo_feature']) else 'kaldi' if args.kaldi_data else 'acoustic'
+    load = 'duo' if bool(config['runner']['duo_feature']) else 'kaldi' if args.kaldi_data else 'flm'
 
     # print path info
     if load == 'duo': 
@@ -114,6 +114,8 @@ def get_dataloader(args, config):
         print('[run_upstream] - Using online data from root: ' + str(config['online']['libri_root']))
     elif load == 'acoustic':
         print('[run_upstream] - Loading data: ' + str(config['dataloader']['data_path']) + ' from these sets ' + str(config['dataloader']['train_set']))
+    elif load == 'flm':
+        print('[run_upstream] - Loading data: ' + str(config['dataloader']['data_path']) + ' from these sets ' + str(config['dataloader']['train_set']))    
 
     dataloader = get_Dataloader(split='train', load=load, use_gpu=args.gpu, 
                                 run_mam=True, mam_config=config['transformer'], **config['dataloader'], **config)

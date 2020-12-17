@@ -154,6 +154,10 @@ def load_libri_data(npy_path, npy_root=None, libri_root=None, online_config=None
             return libri_path
         full_libri_path = get_full_libri_path(npy_path)
         return OnlineDataset.load_data(full_libri_path, **online_config).unsqueeze(-1)
+    
+def load_flm_data(npy_path, npy_root=None, libri_root=None, online_config=None):
+    return torch.FloatTensor(np.load(os.path.join(npy_root, npy_path)))
+    
 
 
 ################
@@ -180,6 +184,70 @@ class BaseDataset(Dataset):
     def __len__(self):
         return len(self.X)
 
+###########################
+# FACIAL LANDMARK DATASET #
+###########################
+class FLDataset(BaseDataset):
+    
+    def __init__(self, file_path, sets, bucket_size, max_timestep=0, drop=False, mam_config=None, online_config=None):
+        super(FLDataset, self).__init__(file_path, sets, bucket_size, max_timestep, drop)
+
+        self.mam_config = mam_config
+        self.online_config = online_config
+        self.libri_root = None
+        
+        self.sample_step = mam_config['max_input_length'] if 'max_input_length' in mam_config else 0    
+        if self.sample_step > 0:
+            print('[Dataset] - Sampling random segments for training, sample length:', self.sample_step)
+
+        X = self.table['file_path'].tolist()
+        X_lens = self.table['length'].tolist()
+
+        # Use bucketing to allow different batch size at run time
+        self.X = []
+        batch_x, batch_len = [], []
+
+        for x, x_len in zip(X, X_lens):
+            batch_x.append(x) #x is the path to file here
+            batch_len.append(x_len)
+            
+            # Fill in batch_x until batch is full, bucket_size is the batch_size in yml file
+            if len(batch_x) == bucket_size:
+                # Half the batch size if seq too long
+                if (bucket_size >= 2) and (max(batch_len) > HALF_BATCHSIZE_TIME) and self.sample_step == 0:
+                    self.X.append(batch_x[:bucket_size//2])
+                    self.X.append(batch_x[bucket_size//2:])
+                else:
+                    self.X.append(batch_x)
+                batch_x, batch_len = [], []
+        
+        # Gather the last batch
+        if len(batch_x) > 1:
+            self.X.append(batch_x)
+
+    
+    def sample(self, x):
+        if len(x) < self.sample_step: return x
+        idx = random.randint(0, len(x)-self.sample_step)
+        return x[idx:idx+self.sample_step]
+    
+    def process_x_pad_batch(self, x_pad_batch):
+        if self.online_config is not None:
+            x_pad_batch = torch.cat([x_pad_batch, x_pad_batch], dim=-1) # (batch_size, seq_len, channel=2)
+            x_pad_batch = x_pad_batch.transpose(-1, -2).contiguous() # (batch_size, channel=2, seq_len)
+            feats = self.preprocessor(x_pad_batch)
+            return process_train_MAM_data(feats, config=self.mam_config)
+        else:
+            return process_train_MAM_data(spec=(x_pad_batch,), config=self.mam_config)
+
+    def __getitem__(self, index):
+        # Load flm feature and pad
+        if self.sample_step > 0:
+            x_batch = [self.sample(load_flm_data(x_file, self.root, self.libri_root, self.online_config)) for x_file in self.X[index]]
+        else:
+            x_batch = [load_flm_data(x_file, self.root, self.libri_root, self.online_config) for x_file in self.X[index]]
+        x_pad_batch = pad_sequence(x_batch, batch_first=True)
+        return self.process_x_pad_batch(x_pad_batch)
 
 ####################
 # ACOUSTIC DATASET #
@@ -215,10 +283,10 @@ class AcousticDataset(BaseDataset):
         batch_x, batch_len = [], []
 
         for x, x_len in zip(X, X_lens):
-            batch_x.append(x)
+            batch_x.append(x) #x is the path to file here
             batch_len.append(x_len)
             
-            # Fill in batch_x until batch is full
+            # Fill in batch_x until batch is full, bucket_size is the batch_size in yml file
             if len(batch_x) == bucket_size:
                 # Half the batch size if seq too long
                 if (bucket_size >= 2) and (max(batch_len) > HALF_BATCHSIZE_TIME) and self.sample_step == 0:
@@ -291,19 +359,20 @@ class KaldiDataset(Dataset):
                         X_lens.append(mat.shape[0])
                 else:
                     X.append(mat)
-                    X_lens.append(mat.shape[0])
+                    X_lens.append(mat.shape[0]) # X contains data (maybe 2D) and X_lens contain len
+                                                # each X represents an audio file
 
         # Use bucketing to allow different batch size at run time
         self.X = []
         batch_x, batch_len = [], []
 
         for x, x_len in zip(X, X_lens):
-            batch_x.append(x)
+            batch_x.append(x) #x of shape: n_frames x n_features
             batch_len.append(x_len)
             
             # Fill in batch_x until batch is full
             if len(batch_x) == bucket_size:
-                # Half the batch size if seq too long
+                # Half the batch size if seq too long (append 2 times)
                 if (bucket_size >= 2) and (max(batch_len) > HALF_BATCHSIZE_TIME) and self.sample_step == 0:
                     self.X.append(batch_x[:bucket_size//2])
                     self.X.append(batch_x[bucket_size//2:])
@@ -325,11 +394,14 @@ class KaldiDataset(Dataset):
 
     def __getitem__(self, index):
         # Load acoustic feature and pad
+        #x_batch: bucket_size x n_frames x n_features
         if self.sample_step > 0:
             x_batch = [torch.FloatTensor(self.sample(x_data)) for x_data in self.X[index]]
         else:
             x_batch = [torch.FloatTensor(x_data) for x_data in self.X[index]]
-        x_pad_batch = pad_sequence(x_batch, batch_first=True)
+        x_pad_batch = pad_sequence(x_batch, batch_first=True) 
+        # bucket_size * time_step * num_feats; time_step is the max n_frames in the bucket
+        # bucket_size = max_timestep, batch_size set to be 1 later => batch_size 3000 basically
         x_pad_batch = process_train_MAM_data(spec=(x_pad_batch,), config=self.mam_config)
         return x_pad_batch
 
@@ -855,6 +927,9 @@ def get_Dataloader(split, load, data_path, batch_size, max_timestep,
     if load == 'acoustic':
         ds = AcousticDataset(file_path=data_path, sets=sets, max_timestep=max_timestep,
                              bucket_size=bs, drop=drop_too_long, mam_config=mam_config, online_config=online)
+    elif load == 'flm':
+        ds = FLDataset(file_path=data_path, sets=sets, max_timestep=max_timestep,
+                             bucket_size=bs, drop=drop_too_long, mam_config=mam_config, online_config=online)    
     elif load == 'kaldi':
         ds = KaldiDataset(file_path=data_path, sets=sets, max_timestep=max_timestep,
                           bucket_size=bs, drop=drop_too_long, mam_config=mam_config)
