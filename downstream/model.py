@@ -296,4 +296,4 @@ class example_classifier(nn.Module):
         result = self.out_fn(logits)
         loss = self.criterion(result, labels)
 
-        return loss
+        return loss, result

@@ -24,7 +24,7 @@ from tensorboardX import SummaryWriter
 from dataloader import get_Dataloader
 from transformer.solver import Solver, Tester
 from transformer.optimization import BertAdam
-from downstream.model import LinearClassifier, RnnClassifier
+from downstream.model import FeedForwardClassifier, RnnClassifier
 from rnn.runner import get_apc_model
 
 
@@ -120,7 +120,7 @@ class Downstream_Solver(Solver):
             raise NotImplementedError('Invalid Task!')
 
         if self.model_type == 'linear':
-            self.classifier = LinearClassifier(input_dim=input_dim,
+            self.classifier = FeedForwardClassifier(input_dim=input_dim,
                                                class_num=self.dataloader.dataset.class_num,
                                                dconfig=self.config['downstream']['linear']).to(self.device)
         elif self.model_type == 'rnn':
