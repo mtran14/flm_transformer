@@ -241,7 +241,7 @@ class Runner():
                     else:
                         loss.backward()
                     loss_val += loss.item()
-                    print(loss_val)
+                    
                     # Update
                     if (step+1) % self.gradient_accumulation_steps == 0:
                         if self.apex:
