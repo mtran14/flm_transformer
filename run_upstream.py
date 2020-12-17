@@ -197,8 +197,7 @@ def main():
     # Train Transformer
     if args.run == 'transformer':
         if args.test != '':
-            test_transformer(args, config['transformer']['input_dim'])
-        else:
+         else:
             run_transformer(args, config)
 
     elif args.run == 'apc':

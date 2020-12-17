@@ -113,7 +113,12 @@ class TransformerInputRepresentations(nn.Module):
         self.dropout = nn.Dropout(config.hidden_dropout_prob)
 
     def forward(self, spec, pos_enc):
-        spec_transformed = self.spec_transform(spec)
+        if(self.hidden_size % spec.shape[-1] != 0):
+            spec_transformed = self.spec_transform(spec)
+        else:
+            dup_num = self.hidden_size//spec.shape[-1]
+            dup_tuple = (spec,) * dup_num
+            spec_transformed = torch.cat(dup_tuple, dim=-1)
 
         input_representations = spec_transformed + pos_enc
         input_representations = self.LayerNorm(input_representations)

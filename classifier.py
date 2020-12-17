@@ -25,7 +25,12 @@ n_fold = 10
 sets = ["data/train-clean-360_chunk_0.csv","data/train-clean-360_chunk_1.csv"]
 tables = [pd.read_csv(s, header=None) for s in sets]
 table = pd.concat(tables, ignore_index=True).values
-kf = KFold(n_splits=n_fold, shuffle=True, random_state=42)
+kf = KFold(n_splits=n_fold, shuffle=True, random_state=1)
+
+pretrain = True
+
+overall_w = []
+overall_f = []
 for train_index, test_index in kf.split(table):
     train_files = table[train_index][:,0]
     train_labels = []
@@ -34,17 +39,44 @@ for train_index, test_index in kf.split(table):
         train_labels.append(current_label)
     train_dataset = SchizophreniaDataset(train_files, 100, train_labels)
     train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-    
     ###########################
-    #init model and optimizer
-    classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-    params = list(list(classifier.named_parameters()))
-    optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=50000)    
+    #load transformer if pretrained
+    if(pretrain):
+        options = {
+            'ckpt_file'     : './result/result_transformer/mockingjay_fbankBase/states-500000.ckpt',
+            'load_pretrain' : 'True',
+            'no_grad'       : 'True',
+            'dropout'       : 'default',
+            'spec_aug'      : 'False',
+            'spec_aug_prev' : 'True',
+            'weighted_sum'  : 'False',
+            'select_layer'  : -1,
+            'permute_input' : 'False',
+        }
+        transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+        
+        # setup your downstream class model
+        classifier = example_classifier(input_dim=768, hidden_dim=64, class_num=2).to(device)
+        
+        # construct the optimizer
+        params = list(list(classifier.named_parameters()))
+        optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=50000)
+            
+    ###########################
+    else:
+        #init model and optimizer
+        classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
+        params = list(list(classifier.named_parameters()))
+        optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=50000)    
     ###########################
     for _, batch in enumerate(train_loader):
         batch_data, batch_labels, file_names = batch
         batch_data = batch_data.to(device)
         batch_labels = batch_labels.to(device)
+        
+        if(pretrain):
+            reps = transformer(batch_data)
+            batch_data = reps
         
         optimizer.zero_grad()
         loss, result = classifier(batch_data.float(), batch_labels)
@@ -69,6 +101,10 @@ for train_index, test_index in kf.split(table):
         batch_data = batch_data.to(device)
         batch_labels = batch_labels.to(device) 
         
+        if(pretrain):
+            reps = transformer(batch_data)
+            batch_data = reps
+        
         loss, result = classifier(batch_data.float(), batch_labels)
         preds = result.argmax(dim=1).detach().cpu().numpy()
         batch_labels = batch_labels.detach().cpu().numpy()
@@ -83,51 +119,56 @@ for train_index, test_index in kf.split(table):
             except:
                 fold_acc_file[current_file] = [correct_bool]
     print(np.mean(fold_acc_window), dict_acc(fold_acc_file))
-    # setup the transformer model
-    """
-    `options`: a python dictionary containing the following keys:
-        ckpt_file: str, a path specifying the pre-trained ckpt file
-        load_pretrain: str, ['True', 'False'], whether to load pre-trained weights
-        no_grad: str, ['True', 'False'], whether to have gradient flow over this class
-        dropout: float/str, use float to modify dropout value during downstream finetune, or use the str `default` for pre-train default values
-        spec_aug: str, ['True', 'False'], whether to apply SpecAugment on inputs (used for ASR training)
-        spec_aug_prev: str, ['True', 'False'], apply spec augment on input acoustic features if True, else apply on output representations (used for ASR training)
-        weighted_sum: str, ['True', 'False'], whether to use a learnable weighted sum to integrate hidden representations from all layers, if False then use the last
-        select_layer: int, select from all hidden representations, set to -1 to select the last (will only be used when weighted_sum is False)
-        permute_input: str, ['True', 'False'], this attribute is for the forward method. If Ture then input ouput is in the shape of (T, B, D), if False then in (B, T, D)
-    """
-    #options = {
-        #'ckpt_file'     : './result/result_transformer/tera/fmllrBase960-F-N-K-libri/states-1000000.ckpt',
-        #'load_pretrain' : 'True',
-        #'no_grad'       : 'True',
-        #'dropout'       : 'default',
-        #'spec_aug'      : 'False',
-        #'spec_aug_prev' : 'True',
-        #'weighted_sum'  : 'False',
-        #'select_layer'  : -1,
-        #'permute_input' : 'False',
-    #}
-    #transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+    overall_w.append(np.mean(fold_acc_window))
+    overall_f.append(dict_acc(fold_acc_file))
     
-    ## setup your downstream class model
-    #classifier = example_classifier(input_dim=768, hidden_dim=128, class_num=2).cuda()
-    
-    ## construct the optimizer
-    #params = list(transformer.named_parameters()) + list(classifier.named_parameters())
-    #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=50000)
-    
-    ## forward
-    #example_inputs = torch.zeros(3, 1200, 40) # A batch of spectrograms:  (batch_size, time_step, feature_size)
-    ## IMPORTANT: Input acoustic features must align with the ones used during our pre-training!
-    #reps = transformer(example_inputs) # returns: (batch_size, time_step, feature_size)
-    #labels = torch.LongTensor([0, 1, 0]).cuda()
-    #loss = classifier(reps, labels)
-    
-    ## update
-    #loss.backward()
-    #optimizer.step()
-    
-    ## save
-    #PATH_TO_SAVE_YOUR_MODEL = 'example.ckpt'
-    #states = {'Classifier': classifier.state_dict(), 'Transformer': transformer.state_dict()}
-    ## torch.save(states, PATH_TO_SAVE_YOUR_MODEL)
+print("Total: ", np.mean(overall_w), np.mean(overall_f))
+
+# setup the transformer model
+"""
+`options`: a python dictionary containing the following keys:
+    ckpt_file: str, a path specifying the pre-trained ckpt file
+    load_pretrain: str, ['True', 'False'], whether to load pre-trained weights
+    no_grad: str, ['True', 'False'], whether to have gradient flow over this class
+    dropout: float/str, use float to modify dropout value during downstream finetune, or use the str `default` for pre-train default values
+    spec_aug: str, ['True', 'False'], whether to apply SpecAugment on inputs (used for ASR training)
+    spec_aug_prev: str, ['True', 'False'], apply spec augment on input acoustic features if True, else apply on output representations (used for ASR training)
+    weighted_sum: str, ['True', 'False'], whether to use a learnable weighted sum to integrate hidden representations from all layers, if False then use the last
+    select_layer: int, select from all hidden representations, set to -1 to select the last (will only be used when weighted_sum is False)
+    permute_input: str, ['True', 'False'], this attribute is for the forward method. If Ture then input ouput is in the shape of (T, B, D), if False then in (B, T, D)
+"""
+#options = {
+    #'ckpt_file'     : './result/result_transformer/tera/fmllrBase960-F-N-K-libri/states-1000000.ckpt',
+    #'load_pretrain' : 'True',
+    #'no_grad'       : 'True',
+    #'dropout'       : 'default',
+    #'spec_aug'      : 'False',
+    #'spec_aug_prev' : 'True',
+    #'weighted_sum'  : 'False',
+    #'select_layer'  : -1,
+    #'permute_input' : 'False',
+#}
+#transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+
+## setup your downstream class model
+#classifier = example_classifier(input_dim=768, hidden_dim=128, class_num=2).cuda()
+
+## construct the optimizer
+#params = list(transformer.named_parameters()) + list(classifier.named_parameters())
+#optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=50000)
+
+## forward
+#example_inputs = torch.zeros(3, 1200, 40) # A batch of spectrograms:  (batch_size, time_step, feature_size)
+## IMPORTANT: Input acoustic features must align with the ones used during our pre-training!
+#reps = transformer(example_inputs) # returns: (batch_size, time_step, feature_size)
+#labels = torch.LongTensor([0, 1, 0]).cuda()
+#loss = classifier(reps, labels)
+
+## update
+#loss.backward()
+#optimizer.step()
+
+## save
+#PATH_TO_SAVE_YOUR_MODEL = 'example.ckpt'
+#states = {'Classifier': classifier.state_dict(), 'Transformer': transformer.state_dict()}
+## torch.save(states, PATH_TO_SAVE_YOUR_MODEL)

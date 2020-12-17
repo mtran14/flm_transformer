@@ -21,8 +21,8 @@ from transformer.model import TransformerConfig, TransformerForMaskedAcousticMod
 from transformer.optimization import BertAdam, Lamb, WarmupLinearSchedule
 from transformer.mam import fast_position_encoding
 from utility.audio import plot_spectrogram_to_numpy
-
-
+import wandb
+wandb.init(project="flm_transformer")
 ##########
 # RUNNER #
 ##########
@@ -212,6 +212,7 @@ class Runner():
         pbar = tqdm(total=self.total_steps)
         pbar.n = self.global_step - 1
 
+        wandb.watch(self.model, log='all')
         while self.global_step <= self.total_steps:
 
             progress = tqdm(self.dataloader, desc="Iteration")
@@ -241,7 +242,7 @@ class Runner():
                     else:
                         loss.backward()
                     loss_val += loss.item()
-                    
+                    wandb.log({"Training Loss": loss.item()})
                     # Update
                     if (step+1) % self.gradient_accumulation_steps == 0:
                         if self.apex:
