@@ -119,8 +119,10 @@ def get_dataloader(args, config):
 
     dataloader = get_Dataloader(split='train', load=load, use_gpu=args.gpu, 
                                 run_mam=True, mam_config=config['transformer'], **config['dataloader'], **config)
+    dataloader_dev = get_Dataloader(split='dev', load=load, use_gpu=args.gpu, 
+                                run_mam=True, mam_config=config['transformer'], **config['dataloader'], **config)    
 
-    return dataloader
+    return dataloader, dataloader_dev
 
 
 ###################
@@ -142,10 +144,10 @@ def run_transformer(args, config):
         copyfile(args.online_config, os.path.join(ckpdir, args.online_config.split('/')[-1]))
 
     # get dataloader
-    dataloader = get_dataloader(args, config)
+    dataloader, dataloader_dev = get_dataloader(args, config)
 
     # train
-    runner = Runner(args, config, dataloader, ckpdir)
+    runner = Runner(args, config, dataloader, dataloader_dev, ckpdir)
     runner.set_model()
     runner.train()
 

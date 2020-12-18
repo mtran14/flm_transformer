@@ -21,6 +21,8 @@ from transformer.model import TransformerConfig, TransformerForMaskedAcousticMod
 from transformer.optimization import BertAdam, Lamb, WarmupLinearSchedule
 from transformer.mam import fast_position_encoding
 from utility.audio import plot_spectrogram_to_numpy
+
+
 import wandb
 wandb.init(project="flm_transformer")
 ##########
@@ -28,7 +30,7 @@ wandb.init(project="flm_transformer")
 ##########
 class Runner():
     ''' Handler for complete pre-training progress of upstream models '''
-    def __init__(self, args, config, dataloader, ckpdir):
+    def __init__(self, args, config, dataloader, dataloader_dev, ckpdir):
         
         self.device = torch.device('cuda') if (args.gpu and torch.cuda.is_available()) else torch.device('cpu')
         if torch.cuda.is_available(): print('[Runner] - CUDA is available!')
@@ -39,6 +41,7 @@ class Runner():
         self.args = args
         self.config = config
         self.dataloader = dataloader
+        self.dataloader_dev = dataloader_dev
         self.ckpdir = ckpdir
 
         # optimizer
@@ -219,6 +222,7 @@ class Runner():
 
             step = 0
             loss_val = 0
+            global_best = 1000000
             for batch in progress:
                 batch_is_valid, *batch = batch
                 try:
@@ -266,6 +270,25 @@ class Runner():
                             self.log.add_scalar('loss', (loss_val), self.global_step)
                             self.log.add_scalar('gradient norm', grad_norm, self.global_step)
                             progress.set_description("Loss %.4f" % (loss_val))
+                            ##############################################
+                            #get dev set loss
+                            self.model.eval()
+                            dev_losses = []
+                            with torch.no_grad():
+                                for _, dev_batch in enumerate(self.dataloader_dev):
+                                    batch_is_valid, *batch = dev_batch
+                                    if not batch_is_valid: continue
+                                    
+                                    spec_masked, pos_enc, mask_label, attn_mask, spec_stacked = self.process_data(batch)
+                                    loss, pred_spec = self.model(spec_masked, pos_enc, mask_label, attn_mask, spec_stacked)   
+                                    dev_losses.append(loss.item())
+                                
+                            overall_dev_loss = np.mean(dev_losses)
+                            wandb.log({"Dev Loss": overall_dev_loss})
+                            if(overall_dev_loss < global_best):
+                                global_best = overall_dev_loss
+                                self.save_model('best')
+                            self.model.train()
 
                         if self.global_step % self.save_step == 0:
                             self.save_model('states')

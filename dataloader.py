@@ -910,7 +910,7 @@ def get_Dataloader(split, load, data_path, batch_size, max_timestep,
         sets = train_set
         drop_too_long = True
     elif split == 'dev':
-        bs = dev_batch_size
+        bs = batch_size
         shuffle = False
         sets = dev_set if load != 'cpc_phone' and load != 'speaker' else train_set # the CPC paper uses its own train/test split from train-clean-100
         drop_too_long = True

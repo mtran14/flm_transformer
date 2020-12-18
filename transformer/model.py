@@ -571,8 +571,7 @@ class TransformerForMaskedAcousticModel(TransformerInitModel):
                                       keep_multihead_output=keep_multihead_output)
         self.SpecHead = TransformerSpecPredictionHead(config, output_dim if output_dim is not None else input_dim)
         self.apply(self.init_Transformer_weights)
-        #self.loss = nn.L1Loss() 
-        self.loss = nn.MSELoss()
+        self.loss = nn.L1Loss() 
 
     def forward(self, spec_input, pos_enc, mask_label=None, attention_mask=None, spec_label=None, head_mask=None):
         outputs = self.Transformer(spec_input, pos_enc, attention_mask,
