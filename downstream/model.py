@@ -169,7 +169,7 @@ class RnnClassifier(nn.Module):
         hidden_size = self.config['hidden_size']
         self.rnn = None
         if hidden_size > 0:
-            self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=drop,
+            self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
                             batch_first=True, bidirectional=False)
             last_dim = hidden_size
 
@@ -218,7 +218,7 @@ class RnnClassifier(nn.Module):
             features = self.dropout(features)
 
         if self.rnn is not None:
-            packed = pack_padded_sequence(features, valid_lengths, batch_first=True, enforce_sorted=True)
+            packed = pack_padded_sequence(features, valid_lengths, batch_first=True, enforce_sorted=False)
             _, h_n = self.rnn(packed)
             hidden = h_n[-1, :, :]
             # cause h_n directly contains info for final states
