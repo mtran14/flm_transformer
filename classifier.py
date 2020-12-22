@@ -48,6 +48,35 @@ def duplicate(features, n_times, d_bool=False):
         return torch.cat((features.reshape(-1,1),)*n_times, dim=1)
     return features
 
+def filter_files(root_files, list_files, drugCond=None):
+    valid_info = []
+    if(drugCond is not None):
+        drugcond_data = pd.read_excel("data/PORQ_drugUnblinding.xlsx").values
+        for row in drugcond_data:
+            if(row[3] == drugCond):
+                valid_info.append(row[:-1])
+                
+    output_files = []
+    for file in root_files:
+        src_info = file.split("/")[-1].split(".npy")[0]
+        for pos_file in list_files:
+            if(src_info not in pos_file):
+                continue
+            participant_id = int(re.search(r'\d{4}', file)[0])
+            if(participant_id >= 8000):
+                output_files.append(pos_file)
+                continue
+            
+            keep = False
+            for drugcondinf in valid_info:
+                if(str(drugcondinf[0]) in pos_file and \
+                   "Day" + str(drugcondinf[1]) in pos_file and \
+                   str(drugcondinf[2])[:10] in pos_file):
+                    keep = True
+            if(keep):
+                output_files.append(pos_file)
+    return output_files
+
 
 torch.manual_seed(seed)
 
@@ -58,6 +87,10 @@ sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv",
 tables = [pd.read_csv(s, header=None) for s in sets]
 table = pd.concat(tables, ignore_index=True).values
 
+name_sets = ["data/train-clean-360_chunk_0.csv","data/train-clean-360_chunk_1.csv"]
+tables_name = [pd.read_csv(s, header=None) for s in name_sets]
+table_name = pd.concat(tables_name, ignore_index=True).values
+
 table_filter = []
 for row in table:
     if(subset in row[0]):
@@ -66,20 +99,24 @@ table = np.array(table_filter)
 
 kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
 n_step = 200
-n_val = 100
+n_val = 16
 segment_size = 500
 bs = 12
 val_every = 40
-
+drugcond = "PL"
 pretrain = True
 
 overall_w = []
 overall_f = []
-for train_index, test_index in kf.split(table):
-    train_files = table[train_index[:-n_val]][:,0]
+for train_index, test_index in kf.split(table_name):
+    train_files_name = table_name[train_index[:-n_val]][:,0]
     train_labels = []
-    val_files = table[train_index[-n_val:]][:,0]
+    train_files = filter_files(train_files_name, table[:,0], drugCond=drugcond)
+    
+    val_files_name = table_name[train_index[-n_val:]][:,0]
     dev_labels = []
+    val_files = filter_files(val_files_name, table[:,0], drugCond=drugcond)
+    
     for file in train_files:
         current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
         train_labels.append(current_label)
@@ -201,8 +238,10 @@ for train_index, test_index in kf.split(table):
                         #except:
                             #fold_acc_file[current_file] = [correct_bool]  
                             
-            test_files = table[test_index][:,0]
+            test_files_name = table_name[test_index][:,0]
             test_labels = []
+            test_files = filter_files(test_files_name, table[:,0], drugCond=drugcond)
+            
             for file in test_files:
                 current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
                 test_labels.append(current_label)
