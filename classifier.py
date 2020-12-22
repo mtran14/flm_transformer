@@ -4,7 +4,7 @@ from downstream.model import example_classifier, RnnClassifier, FeedForwardClass
 from downstream.solver import get_optimizer
 from downstream.dataloader_ds import SchizophreniaDataset, SchizophreniaSegmentDataset
 import pandas as pd
-from sklearn.model_selection import KFold
+from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader
 import re
 from sklearn.metrics import accuracy_score
@@ -90,6 +90,10 @@ table = pd.concat(tables, ignore_index=True).values
 name_sets = ["data/train-clean-360_chunk_0.csv","data/train-clean-360_chunk_1.csv"]
 tables_name = [pd.read_csv(s, header=None) for s in name_sets]
 table_name = pd.concat(tables_name, ignore_index=True).values
+table_label = []
+for file in table_name[:,0]:
+    current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
+    table_label.append(current_label)
 
 table_filter = []
 for row in table:
@@ -97,7 +101,7 @@ for row in table:
         table_filter.append(row)
 table = np.array(table_filter)
 
-kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
+kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
 n_step = 200
 n_val = 16
 segment_size = 500
@@ -108,7 +112,7 @@ pretrain = True
 
 overall_w = []
 overall_f = []
-for train_index, test_index in kf.split(table_name):
+for train_index, test_index in kf.split(table_name, table_label):
     train_files_name = table_name[train_index[:-n_val]][:,0]
     train_labels = []
     train_files = filter_files(train_files_name, table[:,0], drugCond=drugcond)
