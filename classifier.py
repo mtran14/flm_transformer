@@ -111,7 +111,7 @@ for train_index, test_index in kf.split(table):
         transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
         
         # setup your downstream class model
-        classifier = RnnClassifier(272, 2, config).to(device)
+        classifier = RnnClassifier(inp_dim, 2, config).to(device)
         # construct the optimizer
         params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
         optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)
