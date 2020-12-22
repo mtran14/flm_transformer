@@ -13,7 +13,11 @@ from sklearn.linear_model import LogisticRegression
 import torch.nn as nn
 import sys
 
-seed = 123
+try:
+    seed = sys.argv[3]
+except:
+    seed = 123
+    
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 config = {
@@ -302,4 +306,4 @@ for train_index, test_index in kf.split(table):
     
 #print("Total: ", np.mean(overall_w), np.mean(overall_f))
 
-#123 -> 0.7283333333333333
+#123 -> 0.7283333333333333 / 0.51380952381
