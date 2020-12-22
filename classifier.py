@@ -13,10 +13,9 @@ from sklearn.linear_model import LogisticRegression
 import torch.nn as nn
 import sys
 
-try:
-    seed = int(sys.argv[3])
-except:
-    seed = 123
+
+seed = int(sys.argv[3])
+inp_dim = int(sys.argv[4])
     
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
