@@ -103,7 +103,7 @@ n_val = 16
 segment_size = 500
 bs = 12
 val_every = 40
-drugcond = "PL"
+drugcond = sys.argv[5]
 pretrain = True
 
 overall_w = []
