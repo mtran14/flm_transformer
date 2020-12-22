@@ -14,7 +14,7 @@ import torch.nn as nn
 import sys
 
 try:
-    seed = sys.argv[3]
+    seed = int(sys.argv[3])
 except:
     seed = 123
     
