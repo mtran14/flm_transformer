@@ -65,7 +65,7 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
-seeds = list(range(20))
+seeds = list(np.random.randint(0,1000,20))
 drugconds = ["PL","OT"]
 pretrain_option = [True,False]
 #subset = sys.argv[1]
