@@ -67,7 +67,7 @@ model_name_dict = {
     } 
 seeds = list(range(20))
 drugconds = ["PL","OT"]
-pretrain_option = [1,0]
+pretrain_option = [1]
 #subset = sys.argv[1]
 #model_name = sys.argv[2]
 #seed = int(sys.argv[3])
