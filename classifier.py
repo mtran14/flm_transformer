@@ -275,7 +275,7 @@ for seed in seeds:
                         print("Fold Acc: ", fold_test_acc)
                         overall_f.append(fold_test_acc)
                     print(seed, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f))
-                    output.append([seed, drugcond, pretrain, model_name, np.mean(overall_f)])
+                    output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f)])
                     
 pd.DataFrame(output).to_csv("multiple_seed_schz_clf_results.csv", header=None, index=False)
                             
