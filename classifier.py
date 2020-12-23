@@ -67,7 +67,7 @@ model_name_dict = {
     } 
 seeds = list(range(20))
 drugconds = ["PL","OT"]
-pretrain_option = [1]
+pretrain_option = [True,False]
 #subset = sys.argv[1]
 #model_name = sys.argv[2]
 #seed = int(sys.argv[3])
@@ -78,8 +78,7 @@ output = []
 for seed in seeds:
     for subset in subsets:
         for drugcond in drugconds:
-            for pretrain_num in pretrain_option:
-                pretrain = True
+            for pretrain in pretrain_option:
                 if(pretrain):
                     for model_name in model_name_dict.keys():
                         inp_dim = model_name_dict[model_name]
@@ -123,7 +122,6 @@ for seed in seeds:
                         bs = 12
                         val_every = 40
                         
-                        pretrain = False
                         epochs = 10
                         
                         overall_w = []
@@ -321,7 +319,6 @@ for seed in seeds:
                     bs = 12
                     val_every = 40
                     
-                    pretrain = False
                     epochs = 10
                     
                     overall_w = []
