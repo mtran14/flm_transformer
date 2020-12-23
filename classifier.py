@@ -79,7 +79,7 @@ for seed in seeds:
     for subset in subsets:
         for drugcond in drugconds:
             for pretrain_num in pretrain_option:
-                pretrain = True if pretrain_num == 1 else 0
+                pretrain = True
                 if(pretrain):
                     for model_name in model_name_dict.keys():
                         inp_dim = model_name_dict[model_name]
