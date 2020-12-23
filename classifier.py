@@ -27,13 +27,6 @@ config = {
             'concat': 1, 'layers': 3, 'linear': False,
         }
 
-#mymodel = FeedForwardClassifier(136, 2, config)
-#mytensor = torch.from_numpy(np.random.rand(16,50,136))
-#labels = torch.zeros(16,dtype=torch.long)
-#label_mask = (mytensor.sum(dim=-1) != 0).type(torch.LongTensor).to(device='cpu', dtype=torch.long)
-#valid_lengths = label_mask.sum(dim=1)
-#loss, result, correct, valid = mymodel.forward(mytensor.float(), labels, valid_lengths)
-
 def dict_acc(input_dict):
     cnt = 0
     cor = 0
@@ -104,11 +97,12 @@ table = np.array(table_filter)
 kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
 n_step = 200
 n_val = 16
-segment_size = 500
+segment_size = 800
 bs = 12
 val_every = 40
 drugcond = sys.argv[5]
-pretrain = True
+pretrain = False
+epochs = 10
 
 overall_w = []
 overall_f = []
@@ -128,13 +122,14 @@ for train_index, test_index in kf.split(table_name, table_label):
         current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
         dev_labels.append(current_label)    
         
-    #train_dataset = SchizophreniaDataset(train_files, segment_size, train_labels)
+    
     train_dataset = SchizophreniaSegmentDataset(train_files, train_labels, max_len=segment_size)
     train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
     
-    #dev_dataset = SchizophreniaDataset(val_files, segment_size, dev_labels)
     dev_dataset = SchizophreniaSegmentDataset(val_files, dev_labels, max_len=segment_size)
-    dev_loader = DataLoader(dev_dataset, batch_size=bs, shuffle=True)    
+    dev_loader = DataLoader(dev_dataset, batch_size=bs, shuffle=True)  
+    
+    fold_dev_test_acc = {}
     ###########################
     #load transformer if pretrained
     if(pretrain):
@@ -168,14 +163,9 @@ for train_index, test_index in kf.split(table_name, table_label):
 
     if(pretrain):
         transformer.eval()
-    train_set = None
-    test_set = None
-    dev_set = None  
-    train_label = []
-    dev_label = []
-    test_label = []
-    for _ in range(n_step):
         
+    for e in range(epochs):
+        num_step_per_epochs = len(train_loader)
         for k, batch in enumerate(train_loader):
             batch_data, batch_labels, file_names = batch
             batch_data = batch_data.to(device)
@@ -185,14 +175,6 @@ for train_index, test_index in kf.split(table_name, table_label):
                 reps = transformer(batch_data)
                 batch_data = reps
             
-            #current_data = np.array(batch_data.detach().cpu())
-            #current_data = current_data.reshape(current_data.shape[0] * current_data.shape[1], current_data.shape[2])
-            #try:
-                #train_set = np.concatenate((train_set, current_data), axis=0)
-            #except:
-                #train_set = current_data
-            #train_label += list(np.array(torch.cat((batch_labels,)*segment_size, dim=0).cpu()))
-            
             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
             valid_lengths = label_mask.sum(dim=1)        
             
@@ -201,151 +183,78 @@ for train_index, test_index in kf.split(table_name, table_label):
             loss.backward()
             optimizer.step()  
             
-        if(_ % val_every == 0):   
-            classifier.eval()
-            if(pretrain):
-                transformer.eval()
-            fold_acc_window = []
-            #fold_acc_file = {}
-            with torch.no_grad():
-                for _, batch in enumerate(dev_loader):
-                    batch_data, batch_labels, file_names = batch
-                    batch_data = batch_data.to(device)
-                    batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
-            
-                    if(pretrain):
-                        reps = transformer(batch_data)
-                        batch_data = reps
-                        
-                    #current_data = np.array(batch_data.detach().cpu())
-                    #current_data = current_data.reshape(current_data.shape[0] * current_data.shape[1], current_data.shape[2])
-                    #try:
-                        #dev_set = np.concatenate((dev_set, current_data), axis=0)
-                    #except:
-                        #dev_set = current_data     
-                    #dev_label += list(np.array(torch.cat((batch_labels,)*segment_size, dim=0).cpu()))
-                    label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
-                    valid_lengths = label_mask.sum(dim=1)          
-            
-                    
-                    loss, result, correct, valid = classifier.forward(batch_data.float(), batch_labels, valid_lengths)
-                    preds = result.argmax(dim=1).detach().cpu().numpy()
-                    batch_labels = batch_labels.detach().cpu().numpy()
-                    batch_acc = accuracy_score(batch_labels, preds)
-                    fold_acc_window.append(correct.item()/valid.item())
-                    
-                    #for i in range(batch_labels.shape[0]):
-                        #current_file = file_names[i]
-                        #correct_bool = 1 if preds[i]==batch_labels[i] else 0
-                        #try:
-                            #fold_acc_file[current_file].append(correct_bool)
-                        #except:
-                            #fold_acc_file[current_file] = [correct_bool]  
+            current_step = e * num_step_per_epochs + k
+            if(current_step % val_every == 0):   
+                classifier.eval()
+                if(pretrain):
+                    transformer.eval()
+                fold_acc_window = []
+                #fold_acc_file = {}
+                with torch.no_grad():
+                    for _, batch in enumerate(dev_loader):
+                        batch_data, batch_labels, file_names = batch
+                        batch_data = batch_data.to(device)
+                        batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
+                
+                        if(pretrain):
+                            reps = transformer(batch_data)
+                            batch_data = reps
                             
-            test_files_name = table_name[test_index][:,0]
-            test_labels = []
-            test_files = filter_files(test_files_name, table[:,0], drugCond=drugcond)
-            
-            for file in test_files:
-                current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
-                test_labels.append(current_label)
-                            
-            
-            test_dataset = SchizophreniaSegmentDataset(test_files, test_labels, max_len=segment_size)
-            test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True)  
-            
-            
-            fold_acc_window_test = []
-            fold_acc_file_test = {}
-            with torch.no_grad():
-                for _, batch in enumerate(test_loader):
-                    batch_data, batch_labels, file_names = batch
-                    batch_data = batch_data.to(device)
-                    batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
-                    
-                    if(pretrain):
-                        reps = transformer(batch_data)
-                        batch_data = reps
+                        label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
+                        valid_lengths = label_mask.sum(dim=1)          
+                
                         
-                    #current_data = np.array(batch_data.detach().cpu())
-                    #current_data = current_data.reshape(current_data.shape[0] * current_data.shape[1], current_data.shape[2])
-                    #try:
-                        #test_set = np.concatenate((test_set, current_data), axis=0)
-                    #except:
-                        #test_set = current_data                             
-                    #test_label += list(np.array(torch.cat((batch_labels,)*segment_size, dim=0).cpu()))
-                    label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
-                    valid_lengths = label_mask.sum(dim=1)          
-                    
-                    #loss, result = classifier(batch_data.float(), batch_labels)
-                    loss, result, correct, valid = classifier.forward(batch_data.float(), batch_labels, valid_lengths)
-                    preds = result.argmax(dim=1).detach().cpu().numpy()
-                    batch_labels = batch_labels.detach().cpu().numpy()
-                    batch_acc = accuracy_score(batch_labels, preds)
-                    fold_acc_window_test.append(correct.item()/valid.item())
-                    
-                    #for i in range(batch_labels.shape[0]):
-                        #current_file = file_names[i]
-                        #correct_bool = 1 if preds[i]==batch_labels[i] else 0
-                        #try:
-                            #fold_acc_file_test[current_file].append(correct_bool)
-                        #except:
-                            #fold_acc_file_test[current_file] = [correct_bool]
-            #print(np.mean(fold_acc_window_test), dict_acc(fold_acc_file_test))        
-            #print("Epoch ", e, np.mean(epoch_loss), \
-                  #"Dev Set: ", np.mean(fold_acc_window), dict_acc(fold_acc_file), \
-                  #"Test Set: ", np.mean(fold_acc_window_test), dict_acc(fold_acc_file_test))
-            classifier.train()
-            if(pretrain):
-                transformer.train()
-            print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
-                  " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
+                        loss, result, correct, valid = classifier.forward(batch_data.float(), batch_labels, valid_lengths)
+                        preds = result.argmax(dim=1).detach().cpu().numpy()
+                        batch_labels = batch_labels.detach().cpu().numpy()
+                        batch_acc = accuracy_score(batch_labels, preds)
+                        fold_acc_window.append(correct.item()/valid.item())
+                     
+                val_acc = np.mean(fold_acc_window)
+                test_files_name = table_name[test_index][:,0]
+                test_labels = []
+                test_files = filter_files(test_files_name, table[:,0], drugCond=drugcond)
+                
+                for file in test_files:
+                    current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
+                    test_labels.append(current_label)
+                                
+                
+                test_dataset = SchizophreniaSegmentDataset(test_files, test_labels, max_len=segment_size)
+                test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True)  
+                
+                
+                fold_acc_window_test = []
+                fold_acc_file_test = {}
+                with torch.no_grad():
+                    for _, batch in enumerate(test_loader):
+                        batch_data, batch_labels, file_names = batch
+                        batch_data = batch_data.to(device)
+                        batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
+                        
+                        if(pretrain):
+                            reps = transformer(batch_data)
+                            batch_data = reps
+                            
+                        label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
+                        valid_lengths = label_mask.sum(dim=1)  
+                        loss, result, correct, valid = classifier.forward(batch_data.float(), batch_labels, valid_lengths)
+                        batch_acc = correct.item()/valid.item() if val_acc > 0.35 else 1-correct.item()/valid.item()
+                        fold_acc_window_test.append(batch_acc)
+                        
+                classifier.train()
+                if(pretrain):
+                    transformer.train()
+                print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
+                      " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
+                if(np.mean(fold_acc_window) > 0.35):
+                    fold_dev_test_acc[np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+                else:
+                    fold_dev_test_acc[1-np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+    fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
+    print("Fold Acc: ", fold_test_acc)
+    overall_f.append(fold_test_acc)
+print("CV Test ACC: ", np.mean(overall_f))
         
-    #test_files = table[test_index][:,0]
-    #test_labels = []
-    #for file in test_files:
-        #current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
-        #test_labels.append(current_label)
-        
-    #test_dataset = SchizophreniaDataset(test_files, 100, test_labels)
-    #test_loader = DataLoader(test_dataset, batch_size=16, shuffle=True)  
-    
-    #classifier.eval()
-    #if(pretrain):
-        #transformer.eval()
-    #fold_acc_window = []
-    #fold_acc_file = {}
-    #for _, batch in enumerate(test_loader):
-        #batch_data, batch_labels, file_names = batch
-        #batch_data = batch_data.to(device)
-        #batch_labels = batch_labels.to(device) 
-        
-        #if(pretrain):
-            #reps = transformer(batch_data)
-            #batch_data = reps
-            
-        #label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
-        #valid_lengths = label_mask.sum(dim=1)          
-        
-        ##loss, result = classifier(batch_data.float(), batch_labels)
-        #loss, result, correct, valid = classifier.forward(batch_data.float(), batch_labels, valid_lengths)
-        #preds = result.argmax(dim=1).detach().cpu().numpy()
-        #batch_labels = batch_labels.detach().cpu().numpy()
-        #batch_acc = accuracy_score(batch_labels, preds)
-        #fold_acc_window.append(batch_acc)
-        
-        #for i in range(batch_labels.shape[0]):
-            #current_file = file_names[i]
-            #correct_bool = 1 if preds[i]==batch_labels[i] else 0
-            #try:
-                #fold_acc_file[current_file].append(correct_bool)
-            #except:
-                #fold_acc_file[current_file] = [correct_bool]
-    #print(np.mean(fold_acc_window), dict_acc(fold_acc_file))
-    #overall_w.append(np.mean(fold_acc_window))
-    #overall_f.append(dict_acc(fold_acc_file))
-    
-    
-#print("Total: ", np.mean(overall_w), np.mean(overall_f))
 
 #123 -> 0.7283333333333333 / 0.51380952381
