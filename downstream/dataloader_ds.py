@@ -51,7 +51,10 @@ class AvecDataset(Dataset):
         assert len(file_paths) == len(scores)
         self.X = []
         for i in range(len(scores)):
-            current_data = np.load(file_paths[i]) #n_frames x n_features
+            try:
+                current_data = np.load(file_paths[i]) #n_frames x n_features
+            except:
+                continue
             current_score = scores[i]
             participant_id = int(re.findall(r'\d+', file_paths[i])[0])
             index = 0
