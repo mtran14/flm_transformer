@@ -181,9 +181,9 @@ if(pretrain_option):
                             result_pred_np = np.array(batch_scores.detach().cpu())
                             for l in range(len(result_true_np)):
                                 try:
-                                    file_id_scores[file_names[l]].append(result_pred_np[l])
+                                    file_id_scores[file_names[l].item()].append(result_pred_np[l])
                                 except:
-                                    file_id_scores[file_names[l]] = [result_pred_np[l]]
+                                    file_id_scores[file_names[l].item()] = [result_pred_np[l]]
                             
                 
                     pred_by_id = []
