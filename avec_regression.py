@@ -95,7 +95,7 @@ if(pretrain_option):
                 valid_lengths = label_mask.sum(dim=1)        
                 
                 optimizer.zero_grad()
-                loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores, valid_lengths)
+                loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                 loss.backward()
                 optimizer.step()    
                 
@@ -121,7 +121,7 @@ if(pretrain_option):
                             valid_lengths = label_mask.sum(dim=1)          
                 
                 
-                            loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores, valid_lengths)
+                            loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                             fold_preds.append(result)
                             fold_true.append(batch_scores.detach().cpu())
                             
@@ -146,7 +146,7 @@ if(pretrain_option):
                             valid_lengths = label_mask.sum(dim=1)          
                 
                 
-                            loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores, valid_lengths)
+                            loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                             fold_preds_test.append(result)
                             fold_true_test.append(batch_scores.detach().cpu())
                 
