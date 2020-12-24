@@ -81,7 +81,7 @@ def openface_preprocess(args):
     file_list = os.listdir(input_path)
     chunk_size = len(file_list) // args.n_chunk
     current_files = file_list[chunk_size * args.chunk : chunk_size * (args.chunk+1)]
-    overall_file_outname = "train-clean-schz_chunk_"+str(args.chunk) + ".csv"
+    overall_file_outname = "train-clean-avec_chunk_"+str(args.chunk) + ".csv"
     overall_clean_data = []
     for file in current_files:
         file_path = os.path.join(input_path, file)
