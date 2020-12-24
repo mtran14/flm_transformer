@@ -10,6 +10,7 @@ import numpy as np
 import torch.nn as nn
 import sys
 import os
+from sklearn.metrics import mean_squared_error
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 16
@@ -29,6 +30,26 @@ def get_path(participant_ids, processed_path):
         file_name = str(participant_id) + "_VIDEO.npy"
         output.append(os.path.join(processed_path, file_name))
     return output
+
+def concordance_correlation_coefficient(y_true, y_pred,
+                       sample_weight=None,
+                       multioutput='uniform_average'):
+    cor=np.corrcoef(y_true,y_pred)[0][1]
+    
+    mean_true=np.mean(y_true)
+    mean_pred=np.mean(y_pred)
+    
+    var_true=np.var(y_true)
+    var_pred=np.var(y_pred)
+    
+    sd_true=np.std(y_true)
+    sd_pred=np.std(y_pred)
+    
+    numerator=2*cor*sd_true*sd_pred
+    
+    denominator=var_true+var_pred+(mean_true-mean_pred)**2
+
+    return numerator/denominator
 
 
 train_info, dev_info, test_info = "data/train_split.csv", "data/dev_split.csv", "data/test_split.csv"
@@ -50,6 +71,12 @@ test_dataset = AvecDataset(test_paths, test_scores)
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=True)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True)
+
+test_id_score = {}
+participant_test_id = pd.read_csv(test_info).values[:,0]
+participant_test_scores = pd.read_csv(test_info).values[:,regression_col]
+for i  in range(len(participant_test_id)):
+    test_id_score[participant_test_id[i]] = participant_test_scores[i]
 
 if(pretrain_option):
     for model_name in model_name_dict.keys():
@@ -131,6 +158,7 @@ if(pretrain_option):
                     
                     fold_preds_test = []
                     fold_true_test = []
+                    file_id_scores = {}
                     
                     with torch.no_grad():
                         for _, batch in enumerate(test_loader):
@@ -149,11 +177,28 @@ if(pretrain_option):
                             loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                             fold_preds_test.append(result)
                             fold_true_test.append(batch_scores.detach().cpu())
+                            result_true_np = np.array(result)
+                            result_pred_np = np.array(batch_scores.detach().cpu())
+                            for l in range(len(result_true_np)):
+                                try:
+                                    file_id_scores[file_names[l]].append(result_pred_np[l])
+                                except:
+                                    file_id_scores[file_names[l]] = [result_pred_np[l]]
+                            
                 
-                    pred_combine_test = torch.cat(fold_preds_test, dim=0).reshape(-1,1)
-                    true_combine_test = torch.cat(fold_true_test, dim=0).reshape(-1,1)
-                    test_mse_loss = torch.sum((pred_combine_test-true_combine_test)**2)    
-                    print("Step ", current_step, "Dev MSE: ", val_mse_loss, "Test MSE: ", test_mse_loss)
+                    pred_by_id = []
+                    true_by_id = []
+                    for test_id in file_id_scores.item():
+                        true_score = test_id_score[test_id]
+                        pred_score = np.mean(file_id_scores[test_id])
+                        pred_by_id.append(pred_score)
+                        true_by_id.append(true_score)
+                    
+                    test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
+                    test_ccc = concordance_correlation_coefficient(true_by_id, pred_by_id)
+                    
+                    print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
+                          "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                     classifier.train()
                     if(pretrain_option):
                         transformer.train()                    
