@@ -177,8 +177,8 @@ if(pretrain_option):
                             loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                             fold_preds_test.append(result)
                             fold_true_test.append(batch_scores.detach().cpu())
-                            result_true_np = np.array(result)
-                            result_pred_np = np.array(batch_scores.detach().cpu())
+                            result_true_np = np.array(batch_scores.detach().cpu())
+                            result_pred_np = np.array(result)
                             for l in range(len(result_true_np)):
                                 try:
                                     file_id_scores[file_names[l].item()].append(result_pred_np[l])
@@ -191,7 +191,6 @@ if(pretrain_option):
                     for test_id in file_id_scores.keys():
                         true_score = test_id_score[test_id]
                         pred_score = np.mean(file_id_scores[test_id])
-                        print(true_score, pred_score)
                         pred_by_id.append(pred_score)
                         true_by_id.append(true_score)
                     
