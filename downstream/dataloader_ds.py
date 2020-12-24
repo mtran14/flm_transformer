@@ -60,7 +60,7 @@ class AvecDataset(Dataset):
             index = 0
             while(index + max_len <= current_data.shape[0]):
                 current_chunk = current_data[index:index+max_len,:]
-                self.X.append([current_chunk, scores, participant_id])
+                self.X.append([current_chunk, current_score, participant_id])
                 index += max_len
                 
     def __len__(self):
