@@ -53,7 +53,7 @@ class AvecDataset(Dataset):
         for i in range(len(scores)):
             current_data = np.load(file_paths[i]) #n_frames x n_features
             current_score = scores[i]
-            participant_id = int(re.search(r'\d{4}', file_paths[i])[0])
+            participant_id = int(re.findall(r'\d+', file_paths[i])[0])
             index = 0
             while(index + max_len <= current_data.shape[0]):
                 current_chunk = current_data[index:index+max_len,:]
