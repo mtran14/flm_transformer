@@ -44,3 +44,23 @@ class SchizophreniaSegmentDataset(Dataset):
     
     def __getitem__(self, index):
         return self.X[index]
+    
+class AvecDataset(Dataset):
+    def __init__(self, file_paths, scores, max_len=500):
+        assert len(file_paths) == len(scores)
+        self.X = []
+        for i in range(len(scores)):
+            current_data = np.load(file_paths[i]) #n_frames x n_features
+            current_score = scores[i]
+            participant_id = int(re.search(r'\d{4}', file_paths[i])[0])
+            index = 0
+            while(index + max_len <= current_data.shape[0]):
+                current_chunk = current_data[index:index+max_len,:]
+                self.X.append([current_chunk, scores, participant_id])
+                index += max_len
+                
+    def __len__(self):
+        return len(self.X)
+    
+    def __getitem__(self, index):
+        return self.X[index]    
