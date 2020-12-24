@@ -188,7 +188,7 @@ if(pretrain_option):
                 
                     pred_by_id = []
                     true_by_id = []
-                    for test_id in file_id_scores.item():
+                    for test_id in file_id_scores.keys():
                         true_score = test_id_score[test_id]
                         pred_score = np.mean(file_id_scores[test_id])
                         pred_by_id.append(pred_score)
