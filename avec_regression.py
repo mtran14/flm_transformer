@@ -102,7 +102,7 @@ if(pretrain_option):
                 current_step = e * num_step_per_epochs + k
                 if(current_step % eval_every == 0):      
                     classifier.eval()
-                    if(pretrain):
+                    if(pretrain_option):
                         transformer.eval()
                     fold_preds = []
                     fold_true = []
