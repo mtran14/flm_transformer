@@ -100,12 +100,12 @@ def openface_preprocess(args):
         for j in range(data.shape[0]):
             X = []
             y = []
-            if(data[j][2] < 0.9): #3
+            if(data[j][3] < 0.9): #3 for VoxCeleb, 2 for Schz
                 continue
             if(args.nose_al == 1):
-                for i in [27,28,29,30]: #5 and 73
-                    x_val_index = 16 + i
-                    y_val_index = 84 + i           
+                for i in [27,28,29,30]: #5 and 73 for VoxCeleb; 16 and 84 for Schz
+                    x_val_index = 299 + i
+                    y_val_index = 367 + i           
                     X.append(data[j][x_val_index])
                     y.append(data[j][y_val_index])
                 #try:
@@ -117,8 +117,8 @@ def openface_preprocess(args):
                 new_X = []
                 new_Y = []
                 for i in range(68):
-                    x_val_index = 16 + i
-                    y_val_index = 84 + i  
+                    x_val_index = 299 + i
+                    y_val_index = 367 + i  
                     origin = (0,0)
                     qx, qy = rotate(origin, (data[j][x_val_index],data[j][y_val_index]), rotate_angle)
                     new_X.append(qx)
@@ -151,8 +151,8 @@ def openface_preprocess(args):
                 new_X = []
                 new_Y = []
                 for i in range(68):
-                    x_val_index = 16 + i
-                    y_val_index = 84 + i
+                    x_val_index = 299 + i
+                    y_val_index = 367 + i
                     new_X.append(data[j][x_val_index])
                     new_Y.append(data[j][y_val_index]) 
                 new_X -= min(new_X)
