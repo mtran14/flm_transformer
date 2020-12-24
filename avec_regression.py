@@ -78,6 +78,7 @@ participant_test_scores = pd.read_csv(test_info).values[:,regression_col]
 for i  in range(len(participant_test_id)):
     test_id_score[participant_test_id[i]] = participant_test_scores[i]
 
+dev_test_scores = {}
 if(pretrain_option):
     for model_name in model_name_dict.keys():
         inp_dim = model_name_dict[model_name]
@@ -195,16 +196,16 @@ if(pretrain_option):
                         true_by_id.append(true_score)
                     
                     test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
-                    test_ccc = concordance_correlation_coefficient(true_by_id, pred_by_id)
+                    test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id)*100)
                     
                     print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
                           "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
+                    dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
                     classifier.train()
                     if(pretrain_option):
-                        transformer.train()                    
-                    
-        
-        
+                        transformer.train()       
+                        
+print("BEST PERFORMING SCORES: ", dev_test_scores[min(dev_test_scores)])
         
 print("here")
 
