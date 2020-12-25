@@ -219,7 +219,7 @@ else:
                 'pre_linear_dims'       : [20], 'post_linear_dims': [20],'drop':0.2,
                 'concat': 1, 'layers': 3, 'linear': False,
             }        
-    
+    inp_dim = 136
     # setup your downstream class model
     classifier = RnnClassifier(inp_dim, 1, config).to(device)
     # construct the optimizer
