@@ -14,7 +14,8 @@ from sklearn.metrics import mean_squared_error
 from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-torch.manual_seed(0)
+seed = 0
+torch.manual_seed(seed)
 
 batch_size = 32
 pretrain_option = True
@@ -119,7 +120,7 @@ if(pretrain_option):
         transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
         
         # setup your downstream class model
-        classifier = RnnClassifier(inp_dim, 1, config).to(device)
+        classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
         # construct the optimizer
         params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
         optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)        
