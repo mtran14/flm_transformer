@@ -114,6 +114,7 @@ if(pretrain_option):
                 batch_data, batch_scores, participant_id = batch
                 batch_data = batch_data.to(device)
                 batch_scores = batch_scores.to(device)
+                batch_scores /= 27
                 
                 if(pretrain_option):
                     reps = transformer(batch_data)
@@ -140,6 +141,7 @@ if(pretrain_option):
                             batch_data, batch_scores, file_names = batch
                             batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
+                            batch_scores /= 27
                 
                             if(pretrain_option):
                                 reps = transformer(batch_data)
@@ -166,6 +168,7 @@ if(pretrain_option):
                             batch_data, batch_scores, file_names = batch
                             batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
+                            batch_scores /= 27
                 
                             if(pretrain_option):
                                 reps = transformer(batch_data)
