@@ -14,6 +14,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
+from audtorch.metrics.functional import concordance_cc
 
 ###########################
 # FEED FORWARD CLASSIFIER #
@@ -260,7 +261,9 @@ class RnnClassifier(nn.Module):
             if self.mode == 'classification':
                 loss = self.criterion(hidden, labels)
             elif self.mode == 'regression':
-                loss = torch.sqrt(self.criterion(result, labels))           
+                loss1 = torch.sqrt(self.criterion(result, labels)) 
+                loss2 = concordance_cc(result, labels)
+                loss = -torch.abs(loss2) + loss1
 
             # statistic for accuracy
             if self.mode == 'classification':
