@@ -152,10 +152,11 @@ class FeedForwardClassifier(nn.Module):
 # RNN CLASSIFIER #
 ##################
 class RnnClassifier(nn.Module):
-    def __init__(self, input_dim, class_num, dconfig):
+    def __init__(self, input_dim, class_num, dconfig, seed):
         # The class_num for regression mode should be 1
 
         super(RnnClassifier, self).__init__()
+        torch.manual_seed(seed)
         self.config = dconfig
         self.dropout = nn.Dropout(p=dconfig['drop'])
 
