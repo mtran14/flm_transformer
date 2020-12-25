@@ -14,7 +14,11 @@ from sklearn.metrics import mean_squared_error
 from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-seed = 0
+
+try:
+    seed = int(sys.argv[1])
+except:
+    seed = 123
 torch.manual_seed(seed)
 
 batch_size = 32
