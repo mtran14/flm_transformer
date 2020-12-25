@@ -102,7 +102,7 @@ if(pretrain_option):
                     'mode'     : 'regression',
                     'sample_rate' : 1,
                     'hidden_size'       : 512,
-                    'pre_linear_dims'       : [128], 'post_linear_dims': [128],'drop':0.2,
+                    'pre_linear_dims'       : [128,32], 'post_linear_dims': [128,32],'drop':0.2,
                     'concat': 1, 'layers': 3, 'linear': False,
                 }        
         options = {
