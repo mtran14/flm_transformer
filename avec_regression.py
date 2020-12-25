@@ -23,12 +23,19 @@ torch.manual_seed(seed)
 
 batch_size = 32
 pretrain_option = True
+#model_name_dict = {
+    #"result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
+    #"result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
+    #"result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
+    #"result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
+    #} 
+
+
 model_name_dict = {
-    "result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
-    "result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
+
 epochs = 10
 eval_every = 40
 max_len = 500
