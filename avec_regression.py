@@ -23,7 +23,7 @@ model_name_dict = {
     } 
 epochs = 10
 eval_every = 40
-max_len = 500
+max_len = 100
 
 def get_path(participant_ids, processed_path):
     output = []
@@ -217,7 +217,7 @@ else:
                 'mode'     : 'regression',
                 'sample_rate' : 1,
                 'hidden_size'       : 512,
-                'pre_linear_dims'       : [500,400,300,200,100,50], 'post_linear_dims': [500,400,300,200,100,50],'drop':0.2,
+                'pre_linear_dims'       : [100,50], 'post_linear_dims': [100,50],'drop':0.2,
                 'concat': 1, 'layers': 3, 'linear': False,
             }        
     inp_dim = 136
