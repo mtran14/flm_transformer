@@ -36,7 +36,7 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
-n_steps = 250000
+n_steps = 25000
 
 eval_every = 40
 max_len = 500
