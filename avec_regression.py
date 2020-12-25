@@ -255,7 +255,7 @@ else:
                 fold_true = []
                 
                 with torch.no_grad():
-                    for _, batch in enumerate(train_loader):
+                    for _, batch in enumerate(dev_loader):
                         batch_data, batch_scores, file_names = batch
                         batch_data = batch_data.to(device)
                         batch_scores = batch_scores.to(device)
@@ -281,7 +281,7 @@ else:
                 file_id_scores = {}
                 
                 with torch.no_grad():
-                    for _, batch in enumerate(test_loader):
+                    for _, batch in enumerate(train_loader):
                         batch_data, batch_scores, file_names = batch
                         batch_data = batch_data.to(device)
                         batch_scores = batch_scores.to(device)
