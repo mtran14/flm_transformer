@@ -313,7 +313,7 @@ else:
                     pred_score = np.mean(file_id_scores[test_id])
                     pred_by_id.append(pred_score)
                     true_by_id.append(true_score)
-                
+                print(pred_by_id)
                 test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                 test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
                 print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
