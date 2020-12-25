@@ -205,7 +205,7 @@ if(pretrain_option):
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                     dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
-                    dev_score = abs(dev_ccc)
+                    dev_score = -abs(dev_ccc) + dev_rmse/100
                     
                     fold_preds_test = []
                     fold_true_test = []
@@ -247,15 +247,19 @@ if(pretrain_option):
                         
                     pred_by_id = np.array(pred_by_id, dtype=float)
                     true_by_id = np.array(true_by_id, dtype=float)
-                    test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
-                    test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
-                    print("Step ", current_step, "Dev MSE: ", dev_score, \
-                          "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
-                    dev_test_scores[dev_score] = [test_rmse, test_ccc]
-                    classifier.train()
-                    if(pretrain_option):
-                        transformer.train()  
-        print("BEST PERFORMING SCORES: ", model_name, dev_test_scores[max(dev_test_scores)])
+                    try:
+                        
+                        test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
+                        test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
+                        print("Step ", current_step, "Dev MSE: ", dev_score, \
+                              "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
+                        dev_test_scores[dev_score] = [test_rmse, test_ccc]
+                        classifier.train()
+                        if(pretrain_option):
+                            transformer.train()  
+                    except:
+                        break
+        print("BEST PERFORMING SCORES: ", model_name, dev_test_scores[min(dev_test_scores)])
                         
 else:
     config = {
