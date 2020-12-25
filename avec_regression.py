@@ -299,6 +299,7 @@ else:
                         fold_true_test.append(batch_scores.detach().cpu())
                         result_true_np = np.array(batch_scores.detach().cpu())
                         result_pred_np = np.array(result)
+                        print(result, batch_scores)
                         for l in range(len(result_true_np)):
                             try:
                                 file_id_scores[file_names[l].item()].append(result_pred_np[l])
