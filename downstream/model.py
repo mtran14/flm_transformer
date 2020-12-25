@@ -196,7 +196,7 @@ class RnnClassifier(nn.Module):
             init.uniform(layer.weight, -10, 10)
             
         for layer in self.post_linears:
-            init.uniform(layer.weight, 0, 20)
+            init.uniform(layer.weight, -20, 20)
             
         for p in self.rnn.parameters():
             if(p.dim() > 1):
