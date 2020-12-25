@@ -14,6 +14,8 @@ from sklearn.metrics import mean_squared_error
 from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+torch.manual_seed(123)
+
 batch_size = 32
 pretrain_option = True
 model_name_dict = {
@@ -84,7 +86,14 @@ participant_test_scores = pd.read_csv(test_info).values[:,regression_col]
 for i  in range(len(participant_test_id)):
     test_id_score[participant_test_id[i]] = participant_test_scores[i]
 
+dev_id_score = {}
+participant_dev_id = pd.read_csv(dev_info).values[:,0]
+participant_dev_scores = pd.read_csv(dev_info).values[:,regression_col]
+for i  in range(len(participant_dev_id)):
+    dev_id_score[participant_dev_id[i]] = participant_dev_scores[i]
+
 dev_test_scores = {}
+ 
 if(pretrain_option):
     for model_name in model_name_dict.keys():
         model_name = "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt"
@@ -141,7 +150,7 @@ if(pretrain_option):
                         transformer.eval()
                     fold_preds = []
                     fold_true = []
-                    
+                    file_id_scores_dev = {}
                     with torch.no_grad():
                         for _, batch in enumerate(dev_loader):
                             batch_data, batch_scores, file_names = batch
@@ -159,10 +168,30 @@ if(pretrain_option):
                             loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                             fold_preds.append(result)
                             fold_true.append(batch_scores.detach().cpu())
+                            result_true_dev_np = np.array(batch_scores.detach().cpu())
+                            result_pred_dev_np = np.array(result)
+                            for l in range(len(result_true_dev_np)):
+                                try:
+                                    file_id_scores_dev[file_names[l].item()].append(result_pred_dev_np[l])
+                                except:
+                                    file_id_scores_dev[file_names[l].item()] = [result_pred_dev_np[l]]      
+                            
+                                                    
                             
                     pred_combine = torch.cat(fold_preds, dim=0).reshape(-1,1)
                     true_combine = torch.cat(fold_true, dim=0).reshape(-1,1)
                     val_mse_loss = torch.sum((pred_combine-true_combine)**2)
+                    
+                    pred_by_id_val = []
+                    true_by_id_val = []
+                    for dev_id in file_id_scores_dev.keys():
+                        true_score = dev_id_score[dev_id]
+                        pred_score = np.mean(file_id_scores_dev[dev_id])
+                        pred_by_id_val.append(pred_score)
+                        true_by_id_val.append(true_score)                    
+                    dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
+                    dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
+                    dev_score = -dev_rmse/10 + dev_ccc
                     
                     fold_preds_test = []
                     fold_true_test = []
@@ -318,12 +347,12 @@ else:
                 test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
                 print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
                       "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
-                dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
+                dev_test_scores[dev_score] = [test_rmse, test_ccc]
                 classifier.train()
                 if(pretrain_option):
                     transformer.train()  
                     
-print("BEST PERFORMING SCORES: ", dev_test_scores[min(dev_test_scores)])
+print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
         
 print("here")
 

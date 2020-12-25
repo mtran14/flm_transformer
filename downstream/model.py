@@ -259,7 +259,7 @@ class RnnClassifier(nn.Module):
             if self.mode == 'classification':
                 loss = self.criterion(hidden, labels)
             elif self.mode == 'regression':
-                loss = self.criterion(result, labels)           
+                loss = torch.sqrt(self.criterion(result, labels))           
 
             # statistic for accuracy
             if self.mode == 'classification':
