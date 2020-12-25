@@ -239,7 +239,7 @@ if(pretrain_option):
                     classifier.train()
                     if(pretrain_option):
                         transformer.train()  
-        print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
+        print("BEST PERFORMING SCORES: ", model_name, dev_test_scores[max(dev_test_scores)])
                         
 else:
     config = {
