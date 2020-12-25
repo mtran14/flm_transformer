@@ -196,7 +196,7 @@ if(pretrain_option):
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                     dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
-                    dev_score = -dev_rmse/10 + abs(dev_ccc)
+                    dev_score = abs(dev_ccc)
                     
                     fold_preds_test = []
                     fold_true_test = []
