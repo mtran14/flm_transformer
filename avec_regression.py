@@ -402,7 +402,7 @@ else:
                     break    
      
                     
-    print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
+    print("BEST PERFORMING SCORES: ", dev_test_scores[min(dev_test_scores)])
         
 print("here")
 
