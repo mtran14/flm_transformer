@@ -24,7 +24,7 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
-epochs = 100
+epochs = 5
 eval_every = 40
 max_len = 500
 
@@ -345,7 +345,7 @@ else:
                 print(pred_by_id)
                 test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                 test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
-                print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
+                print("Step ", current_step, "Dev MSE: ", dev_score, \
                       "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                 dev_test_scores[dev_score] = [test_rmse, test_ccc]
                 classifier.train()
