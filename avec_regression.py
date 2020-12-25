@@ -245,8 +245,8 @@ if(pretrain_option):
                         pred_by_id.append(pred_score)
                         true_by_id.append(true_score)
                         
-                    pred_by_id = np.array(pred_by_id)
-                    true_by_id = np.array(true_by_id)
+                    pred_by_id = np.array(pred_by_id, dtype=float)
+                    true_by_id = np.array(true_by_id, dtype=float)
                     test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                     test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
                     print("Step ", current_step, "Dev MSE: ", dev_score, \
