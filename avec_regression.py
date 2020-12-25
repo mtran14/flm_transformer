@@ -191,7 +191,7 @@ if(pretrain_option):
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                     dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
-                    dev_score = -dev_rmse/10 + dev_ccc
+                    dev_score = -dev_rmse/10 + abs(dev_ccc)
                     
                     fold_preds_test = []
                     fold_true_test = []
@@ -234,9 +234,9 @@ if(pretrain_option):
                     test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                     test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
                     print(pred_by_id)
-                    print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
+                    print("Step ", current_step, "Dev MSE: ", dev_score, \
                           "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
-                    dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
+                    dev_test_scores[dev_score] = [test_rmse, test_ccc]
                     classifier.train()
                     if(pretrain_option):
                         transformer.train()  
