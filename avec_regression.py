@@ -85,7 +85,7 @@ test_scores = pd.read_csv(test_info).values[:,regression_col]
 #test_scores = (np.array(test_scores) - 13.5)/27
 
 
-train_dataset = AvecDataset(train_paths+dev_paths, list(train_scores)+list(dev_scores), max_len=max_len)
+train_dataset = AvecDataset(train_paths, list(train_scores), max_len=max_len)
 dev_dataset = AvecDataset(dev_paths, dev_scores, max_len=max_len)
 test_dataset = AvecDataset(test_paths, test_scores, max_len=max_len)
 
