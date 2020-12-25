@@ -225,8 +225,7 @@ else:
     classifier = RnnClassifier(inp_dim, 1, config).to(device)
     # construct the optimizer
     params = list(list(classifier.named_parameters()))
-    #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)        
-    optimizer = torch.optim.Adam(params, lr=1e-3)
+    optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)        
     
     for e in range(epochs):
         num_step_per_epochs = len(train_loader)
@@ -311,7 +310,7 @@ else:
                 true_by_id = []
                 for test_id in file_id_scores.keys():
                     true_score = test_id_score[test_id]
-                    pred_score = np.max(file_id_scores[test_id])
+                    pred_score = np.mean(file_id_scores[test_id])
                     pred_by_id.append(pred_score)
                     true_by_id.append(true_score)
                 
