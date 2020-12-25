@@ -36,8 +36,8 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
+n_steps = 250000
 
-epochs = 10
 eval_every = 40
 max_len = 500
 
@@ -106,7 +106,7 @@ for i  in range(len(participant_dev_id)):
     dev_id_score[participant_dev_id[i]] = participant_dev_scores[i]
 
 
- 
+epochs = n_steps//len(train_loader)
 if(pretrain_option):
     for model_name in model_name_dict.keys():
         dev_test_scores = {}
