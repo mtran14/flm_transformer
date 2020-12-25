@@ -187,7 +187,8 @@ class RnnClassifier(nn.Module):
             self.out_fn = nn.LogSoftmax(dim=-1)
             self.criterion = nn.CrossEntropyLoss(ignore_index=-100)
         elif self.mode == 'regression':
-            self.criterion = nn.MSELoss()
+            #self.criterion = nn.MSELoss()
+            self.criterion = nn.L1Loss()
         else:
             raise NotImplementedError('Only classification/regression modes are supported')
 
@@ -246,12 +247,7 @@ class RnnClassifier(nn.Module):
             if self.mode == 'classification':
                 loss = self.criterion(hidden, labels)
             elif self.mode == 'regression':
-                #loss = self.criterion(result, labels)
-                #use pearson correlation as loss
-                vx = result - torch.mean(result)
-                vy = labels - torch.mean(labels)
-                
-                loss = -torch.sum(vx * vy) / (torch.sqrt(torch.sum(vx ** 2)) * torch.sqrt(torch.sum(vy ** 2)))                
+                loss = self.criterion(result, labels)           
 
             # statistic for accuracy
             if self.mode == 'classification':
