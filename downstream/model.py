@@ -193,10 +193,10 @@ class RnnClassifier(nn.Module):
             raise NotImplementedError('Only classification/regression modes are supported')
         
         for layer in self.pre_linears:
-            init.uniform(layer.weight, -5, 5)
+            init.uniform(layer.weight, -1, 1)
             
         for layer in self.post_linears:
-            init.uniform(layer.weight, -5, 5)
+            init.uniform(layer.weight, -20, 20)
             
         for p in self.rnn.parameters():
             if(p.dim() > 1):
