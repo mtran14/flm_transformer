@@ -11,6 +11,7 @@ import torch.nn as nn
 import sys
 import os
 from sklearn.metrics import mean_squared_error
+from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 16
@@ -23,7 +24,7 @@ model_name_dict = {
     } 
 epochs = 10
 eval_every = 40
-max_len = 100
+max_len = 500
 
 def get_path(participant_ids, processed_path):
     output = []
@@ -51,7 +52,6 @@ def concordance_correlation_coefficient(y_true, y_pred,
     denominator=var_true+var_pred+(mean_true-mean_pred)**2
 
     return numerator/denominator
-
 
 train_info, dev_info, test_info = "data/train_split.csv", "data/dev_split.csv", "data/test_split.csv"
 regression_col_name = "PHQ_Score"

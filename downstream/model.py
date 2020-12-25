@@ -13,7 +13,7 @@
 import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
-
+from torch.nn import init
 
 ###########################
 # FEED FORWARD CLASSIFIER #
@@ -172,6 +172,7 @@ class RnnClassifier(nn.Module):
             self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
                             batch_first=True, bidirectional=False)
             last_dim = hidden_size
+            
 
         linears = []
         for linear_dim in self.config['post_linear_dims']:
@@ -190,7 +191,14 @@ class RnnClassifier(nn.Module):
             self.criterion = nn.MSELoss()
         else:
             raise NotImplementedError('Only classification/regression modes are supported')
-
+        
+        for layer in self.pre_linears:
+            init.uniform(layer.weight, -0.5, 0.5)
+            
+        for layer in self.post_linears:
+            init.uniform(layer.weight, -0.5, 0.5)
+            
+        
 
     def statistic(self, probabilities, labels):
         assert(len(probabilities.shape) > 1)
