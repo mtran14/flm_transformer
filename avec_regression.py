@@ -23,7 +23,7 @@ except:
 torch.manual_seed(seed)
 
 batch_size = 32
-pretrain_option = True
+pretrain_option = False
 #model_name_dict = {
     #"result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
     #"result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
@@ -40,6 +40,7 @@ n_steps = 25000
 
 eval_every = 40
 max_len = 500
+norm_label = False
 
 def get_path(participant_ids, processed_path):
     output = []
@@ -80,9 +81,10 @@ dev_scores = pd.read_csv(dev_info).values[:,regression_col]
 test_paths = get_path(pd.read_csv(test_info).values[:,0], processed_npy_path)
 test_scores = pd.read_csv(test_info).values[:,regression_col]
 
-#train_scores = (np.array(train_scores) - 13.5)/27
-#dev_scores = (np.array(dev_scores) - 13.5)/27
-#test_scores = (np.array(test_scores) - 13.5)/27
+if(norm_label):    
+    train_scores = (np.array(train_scores) - 13.5)/27
+    dev_scores = (np.array(dev_scores) - 13.5)/27
+    test_scores = (np.array(test_scores) - 13.5)/27
 
 
 train_dataset = AvecDataset(train_paths, list(train_scores), max_len=max_len)
@@ -262,19 +264,20 @@ if(pretrain_option):
         print("BEST PERFORMING SCORES: ", model_name, dev_test_scores[min(dev_test_scores)])
                         
 else:
+    dev_test_scores = {}
     config = {
                 'mode'     : 'regression',
                 'sample_rate' : 1,
                 'hidden_size'       : 512,
-                'pre_linear_dims'       : [100,50], 'post_linear_dims': [100,50],'drop':0.2,
+                'pre_linear_dims'       : [128], 'post_linear_dims': [128],'drop':0.2,
                 'concat': 1, 'layers': 3, 'linear': False,
             }        
     inp_dim = 136
     # setup your downstream class model
-    classifier = RnnClassifier(inp_dim, 1, config).to(device)
+    classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
     # construct the optimizer
     params = list(list(classifier.named_parameters()))
-    optimizer = get_optimizer(params=params, lr=6e-2, warmup_proportion=0.7, training_steps=5000)        
+    optimizer = get_optimizer(params=params, lr=float(sys.argv[2]), warmup_proportion=0.7, training_steps=int(sys.argv[3]))        
     
     for e in range(epochs):
         num_step_per_epochs = len(train_loader)
@@ -282,19 +285,19 @@ else:
             batch_data, batch_scores, participant_id = batch
             batch_data = batch_data.to(device)
             batch_scores = batch_scores.to(device)
-            
+
             if(pretrain_option):
                 reps = transformer(batch_data)
                 batch_data = reps
-            
+
             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
             valid_lengths = label_mask.sum(dim=1)        
-            
+
             optimizer.zero_grad()
             loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
             loss.backward()
             optimizer.step()    
-            
+
             current_step = e * num_step_per_epochs + k
             if(current_step % eval_every == 0):      
                 classifier.eval()
@@ -302,47 +305,67 @@ else:
                     transformer.eval()
                 fold_preds = []
                 fold_true = []
-                
+                file_id_scores_dev = {}
                 with torch.no_grad():
                     for _, batch in enumerate(dev_loader):
                         batch_data, batch_scores, file_names = batch
                         batch_data = batch_data.to(device)
                         batch_scores = batch_scores.to(device)
-            
+
                         if(pretrain_option):
                             reps = transformer(batch_data)
                             batch_data = reps
-            
+
                         label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                         valid_lengths = label_mask.sum(dim=1)          
-            
-            
+
+
                         loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                         fold_preds.append(result)
                         fold_true.append(batch_scores.detach().cpu())
-                        
+                        result_true_dev_np = np.array(batch_scores.detach().cpu())
+                        result_pred_dev_np = np.array(result)
+                        for l in range(len(result_true_dev_np)):
+                            try:
+                                file_id_scores_dev[file_names[l].item()].append(result_pred_dev_np[l])
+                            except:
+                                file_id_scores_dev[file_names[l].item()] = [result_pred_dev_np[l]]      
+
+
+
                 pred_combine = torch.cat(fold_preds, dim=0).reshape(-1,1)
                 true_combine = torch.cat(fold_true, dim=0).reshape(-1,1)
                 val_mse_loss = torch.sum((pred_combine-true_combine)**2)
-                
+
+                pred_by_id_val = []
+                true_by_id_val = []
+                for dev_id in file_id_scores_dev.keys():
+                    true_score = dev_id_score[dev_id]
+                    pred_score = np.mean(file_id_scores_dev[dev_id])
+                    pred_by_id_val.append(pred_score)
+                    true_by_id_val.append(true_score)                    
+                dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
+                dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
+                dev_score = -abs(dev_ccc) + dev_rmse/100
+
                 fold_preds_test = []
                 fold_true_test = []
                 file_id_scores = {}
-                
+
                 with torch.no_grad():
                     for _, batch in enumerate(test_loader):
                         batch_data, batch_scores, file_names = batch
                         batch_data = batch_data.to(device)
                         batch_scores = batch_scores.to(device)
-            
+
                         if(pretrain_option):
                             reps = transformer(batch_data)
                             batch_data = reps
-            
+
                         label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                         valid_lengths = label_mask.sum(dim=1)          
-            
-            
+
+
                         loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
                         fold_preds_test.append(result)
                         fold_true_test.append(batch_scores.detach().cpu())
@@ -353,8 +376,8 @@ else:
                                 file_id_scores[file_names[l].item()].append(result_pred_np[l])
                             except:
                                 file_id_scores[file_names[l].item()] = [result_pred_np[l]]
-                        
-            
+
+
                 pred_by_id = []
                 true_by_id = []
                 for test_id in file_id_scores.keys():
@@ -362,17 +385,24 @@ else:
                     pred_score = np.mean(file_id_scores[test_id])
                     pred_by_id.append(pred_score)
                     true_by_id.append(true_score)
-                print(pred_by_id)
-                test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
-                test_ccc = concordance_cc(true_by_id, np.array(pred_by_id))
-                print("Step ", current_step, "Dev MSE: ", dev_score, \
-                      "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
-                dev_test_scores[dev_score] = [test_rmse, test_ccc]
-                classifier.train()
-                if(pretrain_option):
-                    transformer.train()  
+
+                pred_by_id = np.array(pred_by_id, dtype=float)
+                true_by_id = np.array(true_by_id, dtype=float)
+                try:
+
+                    test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
+                    test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
+                    print("Step ", current_step, "Dev MSE: ", dev_score, \
+                              "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
+                    dev_test_scores[dev_score] = [test_rmse, test_ccc]
+                    classifier.train()
+                    if(pretrain_option):
+                        transformer.train()  
+                except:
+                    break    
+     
                     
-print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
+    print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
         
 print("here")
 
