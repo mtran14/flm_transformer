@@ -167,7 +167,7 @@ for seed in seeds:
                                 transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
                                 
                                 # setup your downstream class model
-                                classifier = RnnClassifier(inp_dim, 2, config).to(device)
+                                classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
                                 # construct the optimizer
                                 params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
                                 optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)
@@ -176,7 +176,7 @@ for seed in seeds:
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                                classifier = RnnClassifier(136, 2, config).to(device)
+                                classifier = RnnClassifier(136, 2, config, seed).to(device)
                                 params = list(list(classifier.named_parameters()))
                                 optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000) 
                             ###########################
@@ -361,7 +361,7 @@ for seed in seeds:
                             transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
                             
                             # setup your downstream class model
-                            classifier = RnnClassifier(inp_dim, 2, config).to(device)
+                            classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
                             # construct the optimizer
                             params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
                             optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)
@@ -370,7 +370,7 @@ for seed in seeds:
                         else:
                             #init model and optimizer
                             #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                            classifier = RnnClassifier(136, 2, config).to(device)
+                            classifier = RnnClassifier(136, 2, config, seed).to(device)
                             params = list(list(classifier.named_parameters()))
                             optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000) 
                         ###########################
