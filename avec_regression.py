@@ -14,7 +14,7 @@ from sklearn.metrics import mean_squared_error
 from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-batch_size = 16
+batch_size = 32
 pretrain_option = True
 model_name_dict = {
     "result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
@@ -22,7 +22,7 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
-epochs = 10
+epochs = 100
 eval_every = 40
 max_len = 500
 
@@ -225,7 +225,7 @@ else:
     classifier = RnnClassifier(inp_dim, 1, config).to(device)
     # construct the optimizer
     params = list(list(classifier.named_parameters()))
-    optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)        
+    optimizer = get_optimizer(params=params, lr=6e-2, warmup_proportion=0.7, training_steps=5000)        
     
     for e in range(epochs):
         num_step_per_epochs = len(train_loader)
