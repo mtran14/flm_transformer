@@ -15,7 +15,7 @@ from torch.nn import init
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 batch_size = 16
-pretrain_option = False
+pretrain_option = True
 model_name_dict = {
     "result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
     "result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
