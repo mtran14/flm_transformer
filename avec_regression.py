@@ -299,7 +299,6 @@ else:
                         fold_true_test.append(batch_scores.detach().cpu())
                         result_true_np = np.array(batch_scores.detach().cpu())
                         result_pred_np = np.array(result)
-                        print(result, batch_scores)
                         for l in range(len(result_true_np)):
                             try:
                                 file_id_scores[file_names[l].item()].append(result_pred_np[l])
@@ -317,7 +316,6 @@ else:
                 
                 test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                 test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
-                #print(pred_by_id)
                 print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
                       "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                 dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
