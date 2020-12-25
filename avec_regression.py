@@ -23,7 +23,7 @@ model_name_dict = {
     } 
 epochs = 10
 eval_every = 40
-max_len = 150
+max_len = 500
 
 def get_path(participant_ids, processed_path):
     output = []
@@ -310,7 +310,7 @@ else:
                 true_by_id = []
                 for test_id in file_id_scores.keys():
                     true_score = test_id_score[test_id]
-                    pred_score = np.mean(file_id_scores[test_id])
+                    pred_score = np.max(file_id_scores[test_id])
                     pred_by_id.append(pred_score)
                     true_by_id.append(true_score)
                 
