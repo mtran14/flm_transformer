@@ -187,8 +187,7 @@ class RnnClassifier(nn.Module):
             self.out_fn = nn.LogSoftmax(dim=-1)
             self.criterion = nn.CrossEntropyLoss(ignore_index=-100)
         elif self.mode == 'regression':
-            #self.criterion = nn.MSELoss()
-            self.criterion = nn.L1Loss()
+            self.criterion = nn.MSELoss()
         else:
             raise NotImplementedError('Only classification/regression modes are supported')
 
