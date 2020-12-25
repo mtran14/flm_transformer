@@ -23,6 +23,7 @@ model_name_dict = {
     } 
 epochs = 10
 eval_every = 40
+max_len = 150
 
 def get_path(participant_ids, processed_path):
     output = []
@@ -69,9 +70,9 @@ dev_scores = (np.array(dev_scores) - 13.5)/27
 test_scores = (np.array(test_scores) - 13.5)/27
 
 
-train_dataset = AvecDataset(train_paths, train_scores)
-dev_dataset = AvecDataset(dev_paths, dev_scores)
-test_dataset = AvecDataset(test_paths, test_scores)
+train_dataset = AvecDataset(train_paths, train_scores, max_len=max_len)
+dev_dataset = AvecDataset(dev_paths, dev_scores, max_len=max_len)
+test_dataset = AvecDataset(test_paths, test_scores, max_len=max_len)
 
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=True)
