@@ -200,7 +200,7 @@ class RnnClassifier(nn.Module):
             
         for p in self.rnn.parameters():
             if(p.dim() > 1):
-                init.xavier_uniform_(p)
+                init.uniform(p, -1, 1)
         
             
         
