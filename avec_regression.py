@@ -65,9 +65,9 @@ dev_scores = pd.read_csv(dev_info).values[:,regression_col]
 test_paths = get_path(pd.read_csv(test_info).values[:,0], processed_npy_path)
 test_scores = pd.read_csv(test_info).values[:,regression_col]
 
-train_scores = (np.array(train_scores) - 13.5)/27
-dev_scores = (np.array(dev_scores) - 13.5)/27
-test_scores = (np.array(test_scores) - 13.5)/27
+#train_scores = (np.array(train_scores) - 13.5)/27
+#dev_scores = (np.array(dev_scores) - 13.5)/27
+#test_scores = (np.array(test_scores) - 13.5)/27
 
 
 train_dataset = AvecDataset(train_paths, train_scores, max_len=max_len)
