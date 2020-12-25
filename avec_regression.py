@@ -135,7 +135,7 @@ if(pretrain_option):
         # construct the optimizer
         params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
         #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000)        
-        optimizer = torch.optim.SGD(list(transformer.parameters()) + list(classifier.parameters()), lr=0.1, momentum=0.9)
+        optimizer = torch.optim.Adam(list(transformer.parameters()) + list(classifier.parameters()), lr=4e-3)
         
         for e in range(epochs):
             num_step_per_epochs = len(train_loader)
