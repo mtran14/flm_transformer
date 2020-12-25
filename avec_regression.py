@@ -114,7 +114,6 @@ if(pretrain_option):
                 batch_data, batch_scores, participant_id = batch
                 batch_data = batch_data.to(device)
                 batch_scores = batch_scores.to(device)
-                batch_scores /= 27
                 
                 if(pretrain_option):
                     reps = transformer(batch_data)
@@ -141,7 +140,6 @@ if(pretrain_option):
                             batch_data, batch_scores, file_names = batch
                             batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
-                            batch_scores /= 27
                 
                             if(pretrain_option):
                                 reps = transformer(batch_data)
@@ -168,7 +166,6 @@ if(pretrain_option):
                             batch_data, batch_scores, file_names = batch
                             batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
-                            batch_scores /= 27
                 
                             if(pretrain_option):
                                 reps = transformer(batch_data)
@@ -200,7 +197,7 @@ if(pretrain_option):
                     
                     test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                     test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
-                    print(true_by_id[0:5], pred_by_id[0:5])
+                    print(pred_by_id)
                     print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
                           "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                     dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
