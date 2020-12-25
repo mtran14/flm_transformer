@@ -65,9 +65,9 @@ dev_scores = pd.read_csv(dev_info).values[:,regression_col]
 test_paths = get_path(pd.read_csv(test_info).values[:,0], processed_npy_path)
 test_scores = pd.read_csv(test_info).values[:,regression_col]
 
-#train_scores = (np.array(train_scores) - 13.5)/27
-#dev_scores = (np.array(dev_scores) - 13.5)/27
-#test_scores = (np.array(test_scores) - 13.5)/27
+train_scores = (np.array(train_scores) - 13.5)/27
+dev_scores = (np.array(dev_scores) - 13.5)/27
+test_scores = (np.array(test_scores) - 13.5)/27
 
 
 train_dataset = AvecDataset(train_paths, train_scores, max_len=max_len)
@@ -281,7 +281,7 @@ else:
                 file_id_scores = {}
                 
                 with torch.no_grad():
-                    for _, batch in enumerate(train_loader):
+                    for _, batch in enumerate(test_loader):
                         batch_data, batch_scores, file_names = batch
                         batch_data = batch_data.to(device)
                         batch_scores = batch_scores.to(device)
@@ -317,7 +317,7 @@ else:
                 
                 test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                 test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
-                print(pred_by_id)
+                #print(pred_by_id)
                 print("Step ", current_step, "Dev MSE: ", val_mse_loss, \
                       "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                 dev_test_scores[val_mse_loss] = [test_rmse, test_ccc]
