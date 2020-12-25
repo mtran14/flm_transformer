@@ -92,8 +92,8 @@ if(pretrain_option):
         config = {
                     'mode'     : 'regression',
                     'sample_rate' : 1,
-                    'hidden_size'       : 128,
-                    'pre_linear_dims'       : [20], 'post_linear_dims': [20],'drop':0.2,
+                    'hidden_size'       : 728,
+                    'pre_linear_dims'       : [100,50], 'post_linear_dims': [100,50],'drop':0.2,
                     'concat': 1, 'layers': 3, 'linear': False,
                 }        
         options = {
