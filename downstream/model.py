@@ -200,7 +200,7 @@ class RnnClassifier(nn.Module):
             
         for p in self.rnn.parameters():
             if(p.dim() > 1):
-                init.uniform(p, -1.5, 1.5)
+                init.uniform(p, -1, 1)
         
             
         
