@@ -134,8 +134,8 @@ if(pretrain_option):
         classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
         # construct the optimizer
         params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
-        #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000)        
-        optimizer = torch.optim.Adam(list(transformer.parameters()) + list(classifier.parameters()), lr=float(sys.argv[2]))
+        optimizer = get_optimizer(params=params, lr=float(sys.argv[2]), warmup_proportion=0.7, training_steps=int(sys.argv[3]))        
+        #optimizer = torch.optim.Adam(list(transformer.parameters()) + list(classifier.parameters()), lr=float(sys.argv[2]))
         
         for e in range(epochs):
             num_step_per_epochs = len(train_loader)
