@@ -86,6 +86,7 @@ for i  in range(len(participant_test_id)):
 dev_test_scores = {}
 if(pretrain_option):
     for model_name in model_name_dict.keys():
+        model_name = "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt"
         inp_dim = model_name_dict[model_name]
         config = {
                     'mode'     : 'regression',
