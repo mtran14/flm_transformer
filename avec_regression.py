@@ -24,7 +24,7 @@ model_name_dict = {
     "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
     "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
     } 
-epochs = 5
+epochs = 10
 eval_every = 40
 max_len = 500
 
@@ -92,10 +92,11 @@ participant_dev_scores = pd.read_csv(dev_info).values[:,regression_col]
 for i  in range(len(participant_dev_id)):
     dev_id_score[participant_dev_id[i]] = participant_dev_scores[i]
 
-dev_test_scores = {}
+
  
 if(pretrain_option):
     for model_name in model_name_dict.keys():
+        dev_test_scores = {}
         model_name = "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt"
         inp_dim = model_name_dict[model_name]
         config = {
@@ -233,13 +234,13 @@ if(pretrain_option):
                     
                     test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                     test_ccc = concordance_correlation_coefficient(true_by_id, np.array(pred_by_id))
-                    print(pred_by_id)
                     print("Step ", current_step, "Dev MSE: ", dev_score, \
                           "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc)
                     dev_test_scores[dev_score] = [test_rmse, test_ccc]
                     classifier.train()
                     if(pretrain_option):
                         transformer.train()  
+        print("BEST PERFORMING SCORES: ", dev_test_scores[max(dev_test_scores)])
                         
 else:
     config = {
