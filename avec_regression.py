@@ -254,7 +254,7 @@ for seed in seeds:
                             
                             test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                             test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
-                            print("Step ", current_step, "Dev MSE: ", dev_score, \
+                            print("Step ", current_step, "Dev Loss: ", dev_rmse, dev_ccc, \
                                   "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
                             dev_test_scores[dev_score] = [test_rmse, test_ccc]
                             classifier.train()
