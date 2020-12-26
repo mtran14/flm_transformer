@@ -48,7 +48,7 @@ output = []
 for seed in seeds:
     torch.manual_seed(seed)
     
-    batch_size = 32
+    batch_size = 8
     #pretrain_options = [True, False]
     #model_name_dict = {
         #"result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
