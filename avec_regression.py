@@ -139,7 +139,7 @@ for seed in seeds:
             # construct the optimizer
             params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
             #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)        
-            optimizer = torch.optim.ASGD(list(transformer.parameters()) + list(classifier.parameters()), t0=1000)
+            optimizer = torch.optim.Adam(list(classifier.parameters()))
             
             for e in range(epochs):
                 num_step_per_epochs = len(train_loader)
