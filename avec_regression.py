@@ -59,9 +59,11 @@ for seed in seeds:
     
     
     model_name_dict = {
-        "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
-        "result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
-        } 
+        "result/result_transformer/flm_small/states-250000.ckpt":272,
+        "result/result_transformer/flm_base/states-250000.ckpt":272,
+        "result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
+        "result/result_transformer/flm_large/states-250000.ckpt":544,
+    } 
     n_steps = 8000
     
     eval_every = 40
@@ -117,8 +119,8 @@ for seed in seeds:
             config = {
                         'mode'     : 'regression',
                         'sample_rate' : 1,
-                        'hidden_size'       : 512,
-                        'pre_linear_dims'       : [128], 'post_linear_dims': [128],'drop':0.2,
+                        'hidden_size'       : 64,
+                        'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                         'concat': 1, 'layers': 3, 'linear': False,
                     }        
             options = {
@@ -272,8 +274,8 @@ for seed in seeds:
         config = {
                     'mode'     : 'regression',
                     'sample_rate' : 1,
-                    'hidden_size'       : 512,
-                    'pre_linear_dims'       : [128], 'post_linear_dims': [128],'drop':0.2,
+                    'hidden_size'       : 64,
+                    'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                     'concat': 1, 'layers': 3, 'linear': False,
                 }        
         inp_dim = 136
