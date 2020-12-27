@@ -6,8 +6,8 @@ from mmsdk import mmdatasdk
 import numpy as np
 import os
 
-mosi_path = "/shares/perception-working/minh/cmumosi"
-output_path = "/shares/perception-working/minh/openface_mosi/"
+mosi_path = "/shares/perception-working/minh/openface_mosi/"
+output_path = "/shares/perception-working/minh/openface_mosi_segmented/"
 dataset=mmdatasdk.mmdataset(mosi_path)
 num_features = 713
 pseudo_header = []
