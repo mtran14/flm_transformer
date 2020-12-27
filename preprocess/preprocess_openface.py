@@ -70,6 +70,7 @@ def get_preprocess_args():
     parser.add_argument('--n_chunk', default=-1, type=int, help='Total number of chunks', required=True)
     parser.add_argument('--nose_al', default=1, type=int, help='Align nose or not', required=False)
     parser.add_argument('--dr', default=1, type=int, help='Downsampling rate', required=False)
+    parser.add_argument('--ptype', default='flm', type=str, help='gazepose or aus or flm', required=False)
     args = parser.parse_args()
     return args
 
@@ -177,7 +178,77 @@ def openface_preprocess(args):
     pd.DataFrame(overall_clean_data).to_csv(os.path.join(args.output_path+"/../", overall_file_outname), header=None, index=False)
     print('All done, saved at', args.output_path, 'exit.')
 
+def gaze_pose_preprocess(args):
+    input_path = args.input_path
+    file_list = os.listdir(input_path)
+    chunk_size = len(file_list) // args.n_chunk
+    current_files = file_list[chunk_size * args.chunk : chunk_size * (args.chunk+1)]
+    overall_file_outname = "train-clean-vox_gazepose_chunk_"+str(args.chunk) + ".csv"
+    overall_clean_data = []
+    #gaze columns: (vox) 5-13
+    #pose columns: (vox) 296:299
+    #au columns: (vox) 299:316
+    
+    for file in current_files:
+        file_path = os.path.join(input_path, file)
+        data = pd.read_csv(file_path).values
+        data = data[::args.dr]
+        drops = []
+        for k in range(data.shape[0]):
+            for element in data[k]:
+                if(isinstance(element, str)):
+                    drops.append(k)
+        data = np.delete(data, drops, axis=0)
+        if(data.shape[0] == 0):
+            continue
+        data = sliding_window(data, args.window_size, args.step_size)
+        output = []    
+        for j in range(data.shape[0]):
+            current_gaze = data[j][5:13]
+            current_pose = data[j][296:299]
+            output.append(list(current_gaze)+list(current_pose))
+        file_out = os.path.join(args.output_path, file.split(".")[0]+".npy")
+        output = np.array(output)
+        np.save(file_out, output)
+        overall_clean_data.append([file_out, output.shape[0]])  
+    pd.DataFrame(overall_clean_data).to_csv(os.path.join(args.output_path+"/../", overall_file_outname), header=None, index=False)
+    print('All done, saved at', args.output_path, 'exit.')    
 
+def aus_preprocess(args):
+    input_path = args.input_path
+    file_list = os.listdir(input_path)
+    chunk_size = len(file_list) // args.n_chunk
+    current_files = file_list[chunk_size * args.chunk : chunk_size * (args.chunk+1)]
+    overall_file_outname = "train-clean-vox_aus_chunk_"+str(args.chunk) + ".csv"
+    overall_clean_data = []
+    #gaze columns: (vox) 5-13
+    #pose columns: (vox) 296:299
+    #au columns: (vox) 299:316
+    
+    for file in current_files:
+        file_path = os.path.join(input_path, file)
+        data = pd.read_csv(file_path).values
+        data = data[::args.dr]
+        drops = []
+        for k in range(data.shape[0]):
+            for element in data[k]:
+                if(isinstance(element, str)):
+                    drops.append(k)
+        data = np.delete(data, drops, axis=0)
+        if(data.shape[0] == 0):
+            continue
+        data = sliding_window(data, args.window_size, args.step_size)
+        output = []    
+        for j in range(data.shape[0]):
+            current_aus = data[j][299:316]
+            output.append(list(current_aus))
+        file_out = os.path.join(args.output_path, file.split(".")[0]+".npy")
+        output = np.array(output)
+        np.save(file_out, output)
+        overall_clean_data.append([file_out, output.shape[0]])  
+    pd.DataFrame(overall_clean_data).to_csv(os.path.join(args.output_path+"/../", overall_file_outname), header=None, index=False)
+    print('All done, saved at', args.output_path, 'exit.') 
+    
 ########
 # MAIN #
 ########
@@ -187,7 +258,12 @@ def main():
     args = get_preprocess_args()
 
     # Preprocessing Data & Make Data Table
-    openface_preprocess(args)
+    if(args.ptype == 'flm'):
+        openface_preprocess(args)
+    elif(args.ptype == 'gazepose'):
+        gaze_pose_preprocess(args)
+    elif(args.ptype == 'aus'):
+        aus_preprocess(args)
 
 
 if __name__ == '__main__':
