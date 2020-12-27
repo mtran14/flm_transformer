@@ -62,7 +62,7 @@ subsets = ["watch", "describe", "feel"]
 model_name_dict = {
     "result/result_transformer/flm_small/states-250000.ckpt":272,
     "result/result_transformer/flm_base/states-250000.ckpt":272,
-    "result/result_transformer/flm_large_1mask/states-160000.ckpt":544,
+    "result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
     "result/result_transformer/flm_large/states-250000.ckpt":544,
     } 
 seeds = list(np.random.randint(0,1000,20))
