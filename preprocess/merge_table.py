@@ -3,18 +3,20 @@ import numpy as np
 import os
 import random
 
-input_path = "../data/chunk_table/"
+input_path = "/shares/perception-working/minh/vox2/chunk_tables/"
 concat_table = {}
+total_tokens = 0
 for file in os.listdir(input_path):
     current_path = os.path.join(input_path, file)
     data = pd.read_csv(current_path, header=None).values
     for row in data:
-        if(row[1] >= 50):
+        if(row[1] >= 5):
             concat_table[row[0]] = row[1]
             if(isinstance(row[1],str)):
                 print("here")
+            total_tokens += row[1]
        
-
+print("Total tokens: ", total_tokens)
     
 test_dict = {}
 test_size = 4000
@@ -52,8 +54,8 @@ for i in sorted_dict_test.keys():
     output_test.append(row_info)    
     
 headers = ['file_path', 'length', 'label']
-pd.DataFrame(output_train).to_csv("../data/train_table.csv", header=headers)
-pd.DataFrame(output_dev).to_csv("../data/dev_table.csv", header=headers)
-pd.DataFrame(output_test).to_csv("../data/test_table.csv", header=headers)
+pd.DataFrame(output_train).to_csv("../data/train-table.csv", header=headers)
+pd.DataFrame(output_dev).to_csv("../data/dev-table.csv", header=headers)
+pd.DataFrame(output_test).to_csv("../data/test-table.csv", header=headers)
 print("Finish creating table files, exit.")
     
