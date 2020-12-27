@@ -1,6 +1,6 @@
 import pandas as pd
 import sys
-sys.path.append("/home/ICT2000/mtran/CMU-MultimodalSDK")
+sys.path.append("/shares/perception-working/minh/CMU-MultimodalSDK")
 import mmsdk
 from mmsdk import mmdatasdk
 import numpy as np
