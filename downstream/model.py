@@ -171,7 +171,7 @@ class RnnClassifier(nn.Module):
         hidden_size = self.config['hidden_size']
         self.rnn = None
         if hidden_size > 0:
-            self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
+            self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=2, dropout=dconfig['drop'],
                             batch_first=True, bidirectional=False)
             last_dim = hidden_size
             

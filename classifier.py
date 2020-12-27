@@ -60,14 +60,14 @@ def filter_files(root_files, list_files, drugCond=None):
 
 subsets = ["watch", "describe", "feel"]
 model_name_dict = {
-    "result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
-    "result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
-    "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
-    "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
+    "result/result_transformer/flm_small/states-250000.ckpt":272,
+    "result/result_transformer/flm_base/states-250000.ckpt":272,
+    "result/result_transformer/flm_large_1mask/states-160000.ckpt":544,
+    "result/result_transformer/flm_large/states-250000.ckpt":544,
     } 
 seeds = list(np.random.randint(0,1000,20))
 drugconds = ["PL","OT"]
-pretrain_option = [True,False]
+pretrain_option = [False,True]
 #subset = sys.argv[1]
 #model_name = sys.argv[2]
 #seed = int(sys.argv[3])
