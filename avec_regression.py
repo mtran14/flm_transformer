@@ -73,7 +73,7 @@ for seed in seeds:
     train_info, dev_info, test_info = "data/train_split.csv", "data/dev_split.csv", "data/test_split.csv"
     regression_col_name = "PHQ_Score"
     regression_col = list(pd.read_csv(test_info).columns).index(regression_col_name)
-    processed_npy_path = "/shares/perception-working/minh/avec_processed/"
+    processed_npy_path = "/shares/perception-working/minh/avec_processed_3fps/"
     
     train_paths = get_path(pd.read_csv(train_info).values[:,0], processed_npy_path)
     train_scores = pd.read_csv(train_info).values[:,regression_col]
