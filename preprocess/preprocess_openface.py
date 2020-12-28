@@ -71,6 +71,7 @@ def get_preprocess_args():
     parser.add_argument('--nose_al', default=1, type=int, help='Align nose or not', required=False)
     parser.add_argument('--dr', default=1, type=int, help='Downsampling rate', required=False)
     parser.add_argument('--ptype', default='flm', type=str, help='gazepose or aus or flm', required=False)
+    parser.add_argument('--data', default='vox', type=str, help='vox or schz or avec', required=False)
     args = parser.parse_args()
     return args
 
@@ -82,8 +83,9 @@ def openface_preprocess(args):
     file_list = os.listdir(input_path)
     chunk_size = len(file_list) // args.n_chunk
     current_files = file_list[chunk_size * args.chunk : chunk_size * (args.chunk+1)]
-    overall_file_outname = "train-clean-vox_chunk_"+str(args.chunk) + ".csv"
+    overall_file_outname = "train-clean-" + args.data + "_chunk_" + str(args.chunk) + ".csv"
     overall_clean_data = []
+    col_dict = {"vox":[5,73], "schz":[16,84],"avec":[299,367]}
     for file in current_files:
         file_path = os.path.join(input_path, file)
         data = pd.read_csv(file_path).values
@@ -98,6 +100,8 @@ def openface_preprocess(args):
             continue
         data = sliding_window(data, args.window_size, args.step_size)
         output = []
+        start_flm = col_dict[args.data][0]
+        end_flm = col_dict[args.data][1]
         for j in range(data.shape[0]):
             X = []
             y = []
@@ -105,8 +109,8 @@ def openface_preprocess(args):
                 continue
             if(args.nose_al == 1):
                 for i in [27,28,29,30]: #5 and 73 for VoxCeleb; 16 and 84 for Schz, 299 and 367 for Avec
-                    x_val_index = 5 + i
-                    y_val_index = 73 + i           
+                    x_val_index = start_flm + i
+                    y_val_index = end_flm + i           
                     X.append(data[j][x_val_index])
                     y.append(data[j][y_val_index])
                 #try:
@@ -118,8 +122,8 @@ def openface_preprocess(args):
                 new_X = []
                 new_Y = []
                 for i in range(68):
-                    x_val_index = 5 + i
-                    y_val_index = 73 + i  
+                    x_val_index = start_flm + i
+                    y_val_index = end_flm + i  
                     origin = (0,0)
                     qx, qy = rotate(origin, (data[j][x_val_index],data[j][y_val_index]), rotate_angle)
                     new_X.append(qx)
@@ -152,8 +156,8 @@ def openface_preprocess(args):
                 new_X = []
                 new_Y = []
                 for i in range(68):
-                    x_val_index = 299 + i
-                    y_val_index = 367 + i
+                    x_val_index = start_flm + i
+                    y_val_index = end_flm + i
                     new_X.append(data[j][x_val_index])
                     new_Y.append(data[j][y_val_index]) 
                 new_X -= min(new_X)
