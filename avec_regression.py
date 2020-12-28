@@ -65,7 +65,7 @@ for seed in seeds:
         #"result/result_transformer/flm_large/states-250000.ckpt":544,
         #"result/result_transformer/flm_large_run2/states-100000.ckpt":544,
     } 
-    n_steps = 8000
+    n_steps = 400
     
     eval_every = 40
     max_len = 500
