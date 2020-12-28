@@ -141,7 +141,7 @@ for seed in seeds:
             # construct the optimizer
             params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
             #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)        
-            optimizer = torch.optim.Adam(list(classifier.parameters())+list(transformer.parameters()), lr=0.005)
+            optimizer = torch.optim.AdamW(list(classifier.parameters())+list(transformer.parameters()), lr=3e-4)
             train_losses = []
             for e in range(epochs):
                 num_step_per_epochs = len(train_loader)
@@ -259,8 +259,8 @@ for seed in seeds:
                             
                             test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                             test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
-                            print("Step ", current_step, "Train CCC: ", np.mean(train_losses), "Dev Loss: ", dev_rmse, dev_ccc, \
-                                  "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
+                            print("Step ", current_step, "Train CCC: ", np.round(np.mean(train_losses),2), "Dev Loss: ", np.round(dev_rmse,2), np.round(dev_ccc,2), \
+                                  "Test RMSE: ", np.round(test_rmse,2), "Test CCC: ", np.round(test_ccc.item(),2))
                             dev_test_scores[dev_score] = [test_rmse, test_ccc]
                             train_losses = []
                             classifier.train()
