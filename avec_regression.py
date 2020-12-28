@@ -73,7 +73,7 @@ for seed in seeds:
     train_info, dev_info, test_info = "data/train_split.csv", "data/dev_split.csv", "data/test_split.csv"
     regression_col_name = "PHQ_Score"
     regression_col = list(pd.read_csv(test_info).columns).index(regression_col_name)
-    processed_npy_path = "/shares/perception-working/minh/avec_processed_3fps/"
+    processed_npy_path = "/shares/perception-working/minh/avec_processed_three_fps/"
     
     train_paths = get_path(pd.read_csv(train_info).values[:,0], processed_npy_path)
     train_scores = pd.read_csv(train_info).values[:,regression_col]
@@ -203,7 +203,7 @@ for seed in seeds:
                         
                         pred_by_id_val = []
                         true_by_id_val = []
-                        print(file_id_scores_dev.keys())
+                        
                         for dev_id in file_id_scores_dev.keys():
                             true_score = dev_id_score[dev_id]
                             pred_score = np.mean(file_id_scores_dev[dev_id])
