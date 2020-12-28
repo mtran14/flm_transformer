@@ -203,6 +203,7 @@ for seed in seeds:
                         
                         pred_by_id_val = []
                         true_by_id_val = []
+                        print(file_id_scores_dev.keys())
                         for dev_id in file_id_scores_dev.keys():
                             true_score = dev_id_score[dev_id]
                             pred_score = np.mean(file_id_scores_dev[dev_id])
