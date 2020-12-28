@@ -1,10 +1,10 @@
 transformer:
-  input_dim: 39                                        # `int`, 39 for mfcc, 40 for fmllr, 80 for fbank, 160 for mel
+  input_dim: 17                                        # `int`, 39 for mfcc, 40 for fmllr, 80 for fbank, 160 for mel
   downsample_rate: 1                                    # stacked consecutive features vectors to reduce the length of input sequences by this factor.
-  hidden_size: 50                                      # Size of the encoder layers and the pooler layer. Default 768
-  num_hidden_layers: 2                                  # Number of hidden layers in the Transformer encoder. Default 3
-  num_attention_heads: 2                               # Number of attention heads for each attention layer in the Transformer encoder. Default 12
-  intermediate_size: 100                               # The size of the "intermediate" (i.e., feed-forward) layer in the Transformer encoder. Default 3072
+  hidden_size: 85                                      # Size of the encoder layers and the pooler layer. Default 768
+  num_hidden_layers: 3                                  # Number of hidden layers in the Transformer encoder. Default 3
+  num_attention_heads: 8                               # Number of attention heads for each attention layer in the Transformer encoder. Default 12
+  intermediate_size: 1536                               # The size of the "intermediate" (i.e., feed-forward) layer in the Transformer encoder. Default 3072
   hidden_act: "gelu"                                    # The non-linear activation function (function or string) in the encoder and pooler. If string, "gelu", "relu" and "swish" are supported.
   hidden_dropout_prob: 0.1                              # The dropout probabilitiy for all fully connected layers in the embeddings, encoder, and pooler.
   attention_probs_dropout_prob: 0.1                     # The dropout ratio for the attention probabilities.
@@ -38,17 +38,17 @@ dataloader:
   max_timestep: 3000                                    # Max length for audio feature (0 for no restriction)
   
   # LIBRISEECH SETTINGS
-  data_path: 'data/libri'                      # Source data path, run: `python preprocess/preprocess_libri.py --feature_type=fbank --delta=True` /shares/perception-working/minh/vox2/
+  data_path: '/shares/perception-working/minh/vox2/'                      # Source data path, run: `python preprocess/preprocess_libri.py --feature_type=fbank --delta=True` /shares/perception-working/minh/vox2/
   target_path: ''                                       # Target data path for reconstruction to a different feature type, for example linear spectrograms 
   phone_path: 'data/cpc_phone'                        # phone boundary label data path for the phone classification task. set to 'data/libri_phone' or 'data/cpc_phone'
-  train_set: ['train-clean-360']                        # can be the subset of ['train-clean-100', 'train-clean-360', 'train-other-500']
-  dev_set: ['dev-clean']
+  train_set: ['train-table_au']                        # can be the subset of ['train-clean-100', 'train-clean-360', 'train-other-500']
+  dev_set: ['dev-table_au']
 
 
 runner:
   # Training options
   apex: False                                           # Use APEX (see https://github.com/NVIDIA/apex for more details)
-  total_steps: 500000                                   # total steps for training, a step is a batch of update. Default 500000
+  total_steps: 250000                                   # total steps for training, a step is a batch of update. Default 500000
   log_step: 50                                         # log training status every this amount of training steps. Default: 2500
   save_step: 10000                                      # save model every this amount of training steps
   duo_feature: False                                    # Use different input / output features during training
