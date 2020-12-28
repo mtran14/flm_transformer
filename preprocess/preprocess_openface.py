@@ -230,26 +230,30 @@ def aus_preprocess(args):
     #au columns: (vox) 299:316
     
     for file in current_files:
-        file_path = os.path.join(input_path, file)
-        data = pd.read_csv(file_path).values
-        data = data[::args.dr]
-        drops = []
-        for k in range(data.shape[0]):
-            for element in data[k]:
-                if(isinstance(element, str)):
-                    drops.append(k)
-        data = np.delete(data, drops, axis=0)
-        if(data.shape[0] == 0):
+        try:
+            
+            file_path = os.path.join(input_path, file)
+            data = pd.read_csv(file_path).values
+            data = data[::args.dr]
+            drops = []
+            for k in range(data.shape[0]):
+                for element in data[k]:
+                    if(isinstance(element, str)):
+                        drops.append(k)
+            data = np.delete(data, drops, axis=0)
+            if(data.shape[0] == 0):
+                continue
+            data = sliding_window(data, args.window_size, args.step_size)
+            output = []    
+            for j in range(data.shape[0]):
+                current_aus = data[j][299:316]
+                output.append(list(current_aus))
+            file_out = os.path.join(args.output_path, file.split(".")[0]+".npy")
+            output = np.array(output)
+            np.save(file_out, output)
+            overall_clean_data.append([file_out, output.shape[0]])  
+        except:
             continue
-        data = sliding_window(data, args.window_size, args.step_size)
-        output = []    
-        for j in range(data.shape[0]):
-            current_aus = data[j][299:316]
-            output.append(list(current_aus))
-        file_out = os.path.join(args.output_path, file.split(".")[0]+".npy")
-        output = np.array(output)
-        np.save(file_out, output)
-        overall_clean_data.append([file_out, output.shape[0]])  
     pd.DataFrame(overall_clean_data).to_csv(os.path.join(args.output_path+"/../", overall_file_outname), header=None, index=False)
     print('All done, saved at', args.output_path, 'exit.') 
     
