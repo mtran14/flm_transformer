@@ -50,20 +50,20 @@ for seed in seeds:
     
     batch_size = 8
     #pretrain_options = [True, False]
-    model_name_dict = {
-        "result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
-        "result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
-        "result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
-        "result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
-        } 
-    
-    
     #model_name_dict = {
+        #"result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
+        #"result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
+        #"result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
+        #"result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
+        #} 
+    
+    
+    model_name_dict = {
         #"result/result_transformer/flm_small/states-250000.ckpt":272,
-        #"result/result_transformer/flm_base/states-250000.ckpt":272,
-        #"result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
-        #"result/result_transformer/flm_large/states-250000.ckpt":544,
-    #} 
+        "result/result_transformer/flm_base/states-250000.ckpt":272,
+        "result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
+        "result/result_transformer/flm_large/states-250000.ckpt":544,
+    } 
     n_steps = 8000
     
     eval_every = 40
