@@ -65,7 +65,7 @@ for seed in seeds:
         #"result/result_transformer/flm_large/states-250000.ckpt":544,
         #"result/result_transformer/flm_large_run2/states-100000.ckpt":544,
     } 
-    n_steps = 400
+    n_steps = 4000
     
     eval_every = 40
     max_len = 500
@@ -275,7 +275,7 @@ for seed in seeds:
             chosen_stats = dev_test_scores[min(dev_test_scores)]
             chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
             print("BEST PERFORMING SCORES: ", model_name, chosen_stats)
-            output.append([seed, model_name, chosen_dev_scores[0].item(), chosen_dev_scores[1].item(), chosen_stats[0].item(), chosen_stats[1].item()])
+            output.append([seed, model_name, chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1].item()])
 
     pretrain_option = False
     if(not pretrain_option):
@@ -422,8 +422,8 @@ for seed in seeds:
         chosen_stats = dev_test_scores[min(dev_test_scores)]
         chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
         print("BEST PERFORMING SCORES: ", chosen_stats)
-        output.append([seed, "N/A", chosen_dev_scores[0].item(), chosen_dev_scores[1].item(), chosen_stats[0].item(), chosen_stats[1].item()])
-pd.DataFrame(output).to_csv("avec_seed_results.csv", header=None, index=False)
+        output.append([seed, "N/A", chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1].item()])
+pd.DataFrame(output).to_csv("avec_seed_results_flm.csv", header=None, index=False)
             
 
 
