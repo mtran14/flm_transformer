@@ -116,6 +116,7 @@ for seed in seeds:
     if(pretrain_option):
         for model_name in model_name_dict.keys():
             dev_test_scores = {}
+            dev_score_break_down = {}
             inp_dim = model_name_dict[model_name]
             config = {
                         'mode'     : 'regression',
@@ -215,6 +216,7 @@ for seed in seeds:
                         dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                         dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
                         dev_score = -abs(dev_ccc) + dev_rmse/100
+                        dev_score_break_down[dev_score] = [dev_ccc, dev_rmse]
                         
                         fold_preds_test = []
                         fold_true_test = []
@@ -271,12 +273,14 @@ for seed in seeds:
                             train_losses = []
                             break
             chosen_stats = dev_test_scores[min(dev_test_scores)]
+            chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
             print("BEST PERFORMING SCORES: ", model_name, chosen_stats)
-            output.append([seed, model_name, chosen_stats[0], chosen_stats[1]])
+            output.append([seed, model_name, chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1]])
 
     pretrain_option = False
     if(not pretrain_option):
         dev_test_scores = {}
+        dev_score_break_down = {}
         config = {
                     'mode'     : 'regression',
                     'sample_rate' : 1,
@@ -360,7 +364,8 @@ for seed in seeds:
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                     dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
                     dev_score = -abs(dev_ccc) + dev_rmse/100
-    
+                    dev_score_break_down[dev_score] = [dev_ccc, dev_rmse]
+                    
                     fold_preds_test = []
                     fold_true_test = []
                     file_id_scores = {}
@@ -415,8 +420,9 @@ for seed in seeds:
                         break    
          
         chosen_stats = dev_test_scores[min(dev_test_scores)]
+        chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
         print("BEST PERFORMING SCORES: ", chosen_stats)
-        output.append([seed, "N/A", chosen_stats[0], chosen_stats[1]])
+        output.append([seed, "N/A", chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1]])
 pd.DataFrame(output).to_csv("avec_seed_results.csv", header=None, index=False)
             
 
