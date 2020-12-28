@@ -140,8 +140,8 @@ for seed in seeds:
             classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
             # construct the optimizer
             params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
-            optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)        
-            #optimizer = torch.optim.Adam(list(classifier.parameters()))
+            #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)        
+            optimizer = torch.optim.Adam(list(classifier.parameters())+list(transformer.parameters()), lr=0.001)
             
             for e in range(epochs):
                 num_step_per_epochs = len(train_loader)
