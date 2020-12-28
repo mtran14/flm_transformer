@@ -3,7 +3,7 @@ import numpy as np
 import os
 import random
 
-input_path = "/shares/perception-working/minh/vox2/chunk_tables_gazepose/"
+input_path = "/shares/perception-working/minh/vox2/chunk_tables_au/"
 concat_table = {}
 total_tokens = 0
 for file in os.listdir(input_path):
@@ -54,8 +54,8 @@ for i in sorted_dict_test.keys():
     output_test.append(row_info)    
     
 headers = ['file_path', 'length', 'label']
-pd.DataFrame(output_train).to_csv("../data/train-table_gp.csv", header=headers)
-pd.DataFrame(output_dev).to_csv("../data/dev-table_gp.csv", header=headers)
-pd.DataFrame(output_test).to_csv("../data/test-table_gp.csv", header=headers)
+pd.DataFrame(output_train).to_csv("../data/train-table_au.csv", header=headers)
+pd.DataFrame(output_dev).to_csv("../data/dev-table_au.csv", header=headers)
+pd.DataFrame(output_test).to_csv("../data/test-table_au.csv", header=headers)
 print("Finish creating table files, exit.")
     
