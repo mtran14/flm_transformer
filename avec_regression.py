@@ -60,10 +60,10 @@ for seed in seeds:
     
     model_name_dict = {
         #"result/result_transformer/flm_small/states-250000.ckpt":272,
-        #"result/result_transformer/flm_base/states-250000.ckpt":272,
+        "result/result_transformer/flm_base/states-250000.ckpt":272,
         #"result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
         #"result/result_transformer/flm_large/states-250000.ckpt":544,
-        "result/result_transformer/flm_large_run2/states-100000.ckpt":544,
+        #"result/result_transformer/flm_large_run2/states-100000.ckpt":544,
     } 
     n_steps = 8000
     
@@ -289,7 +289,8 @@ for seed in seeds:
         classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
         # construct the optimizer
         params = list(list(classifier.named_parameters()))
-        optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)     
+        #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)     
+        optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)
         
         for e in range(epochs):
             num_step_per_epochs = len(train_loader)
