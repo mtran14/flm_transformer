@@ -59,7 +59,7 @@ def filter_files(root_files, list_files, drugCond=None):
 
 
 #subsets = ["watch", "describe", "feel"]
-subsets = ["describe"]
+subsets = ["watch", "describe", "feel"]
 #model_name_dict = {
     #"result/result_transformer/flm_small/states-250000.ckpt":272,
     #"result/result_transformer/flm_base/states-250000.ckpt":272,
@@ -75,10 +75,10 @@ model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
 model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 
-seeds = list(np.random.randint(0,1000,20))
+seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
 pretrain_option = [False,True]
-sources = ["au", "gp"]
+sources = ["flm", "au", "gp"]
 
 output = []
 for seed in seeds:
