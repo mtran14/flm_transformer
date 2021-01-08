@@ -184,6 +184,8 @@ for seed in seeds:
                     
                     optimizer.zero_grad()
                     loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
+                    if(loss.item() != loss.item()):
+                        continue                    
                     train_losses.append(loss.item())
                     loss.backward()
                     optimizer.step()    
