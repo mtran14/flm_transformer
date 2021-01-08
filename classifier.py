@@ -2,7 +2,7 @@ import torch
 from transformer.nn_transformer import TRANSFORMER
 from downstream.model import example_classifier, RnnClassifier, FeedForwardClassifier
 from downstream.solver import get_optimizer
-from downstream.dataloader_ds import SchizophreniaDataset, SchizophreniaSegmentDataset
+from downstream.dataloader_ds import SchizophreniaMMDataset
 import pandas as pd
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader
@@ -58,21 +58,24 @@ def filter_files(root_files, list_files, drugCond=None):
     return output_files
 
 
-subsets = ["watch", "describe", "feel"]
-model_name_dict = {
-    "result/result_transformer/flm_small/states-250000.ckpt":272,
-    "result/result_transformer/flm_base/states-250000.ckpt":272,
-    "result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
-    "result/result_transformer/flm_large/states-250000.ckpt":544,
-    } 
+#subsets = ["watch", "describe", "feel"]
+subsets = ["describe"]
+#model_name_dict = {
+    #"result/result_transformer/flm_small/states-250000.ckpt":272,
+    #"result/result_transformer/flm_base/states-250000.ckpt":272,
+    #"result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
+    #"result/result_transformer/flm_large/states-250000.ckpt":544,
+    #} 
+    
+model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
+model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
+model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
+model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
+
 seeds = list(np.random.randint(0,1000,20))
 drugconds = ["PL","OT"]
-pretrain_option = [True,False]
-#subset = sys.argv[1]
-#model_name = sys.argv[2]
-#seed = int(sys.argv[3])
-#inp_dim = int(sys.argv[4])
-#drugcond = sys.argv[5]
+pretrain_option = [False,True]
+sources = ["au", "gp"]
 
 output = []
 for seed in seeds:
@@ -80,8 +83,13 @@ for seed in seeds:
         for drugcond in drugconds:
             for pretrain in pretrain_option:
                 if(pretrain):
-                    for model_name in model_name_dict.keys():
-                        inp_dim = model_name_dict[model_name]
+                    for i in range(1):
+                        if(pretrain):
+                            dim_dict = {"flm":272, "gp":88, "au":136}
+                            inp_dim = sum([dim_dict[x] for x in sources])
+                        else:
+                            dim_dict = {"flm":136, "gp":11, "au":17}
+                            inp_dim = sum([dim_dict[x] for x in sources])                        
                     
                         config = {
                                     'mode'     : 'classification',
@@ -96,8 +104,7 @@ for seed in seeds:
                         torch.manual_seed(seed)
                         
                         n_fold = 5
-                        sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv",\
-                                "data/train-clean-schz_chunk_2.csv","data/train-clean-schz_chunk_3.csv"]
+                        sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
                         tables = [pd.read_csv(s, header=None) for s in sets]
                         table = pd.concat(tables, ignore_index=True).values
                         
@@ -118,7 +125,7 @@ for seed in seeds:
                         kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                         n_step = 200
                         n_val = 16
-                        segment_size = 800
+                        segment_size = 100
                         bs = 12
                         val_every = 40
                         
@@ -143,10 +150,10 @@ for seed in seeds:
                                 dev_labels.append(current_label)    
                                 
                             
-                            train_dataset = SchizophreniaSegmentDataset(train_files, train_labels, max_len=segment_size)
+                            train_dataset = SchizophreniaMMDataset(train_files, train_labels, max_len=segment_size)
                             train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
                             
-                            dev_dataset = SchizophreniaSegmentDataset(val_files, dev_labels, max_len=segment_size)
+                            dev_dataset = SchizophreniaMMDataset(val_files, dev_labels, max_len=segment_size)
                             dev_loader = DataLoader(dev_dataset, batch_size=bs, shuffle=True)  
                             
                             fold_dev_test_acc = {}
@@ -154,7 +161,6 @@ for seed in seeds:
                             #load transformer if pretrained
                             if(pretrain):
                                 options = {
-                                    'ckpt_file'     : model_name,
                                     'load_pretrain' : 'True',
                                     'no_grad'       : 'True',
                                     'dropout'       : 'default',
@@ -164,33 +170,53 @@ for seed in seeds:
                                     'select_layer'  : -1,
                                     'permute_input' : 'False',
                                 }
-                                transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+                                models_dict = {}
+                                for modal in sources:
+                                    options['ckpt_file'] = model_name_dict[modal]
+                                    current_transformer = TRANSFORMER(options=options, inp_dim=0).to(device)
+                                    current_transformer.train()
+                                    models_dict[modal] = current_transformer                                
                                 
                                 # setup your downstream class model
                                 classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                                classifier.train()
                                 # construct the optimizer
-                                params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
-                                optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)
+                                param_list = []
+                                for modal in sources:
+                                    param_list += list(models_dict[modal].parameters())
+                                param_list += list(classifier.parameters())
+                                optimizer = torch.optim.AdamW(param_list, lr=3e-4)
                                     
                             ###########################
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
                                 classifier = RnnClassifier(136, 2, config, seed).to(device)
-                                params = list(list(classifier.named_parameters()))
-                                optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000) 
+                                optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
+                                classifier.train()
                             ###########################
                                 
                             for e in range(epochs):
                                 num_step_per_epochs = len(train_loader)
                                 for k, batch in enumerate(train_loader):
                                     batch_data, batch_labels, file_names = batch
-                                    batch_data = batch_data.to(device)
+                                    #batch_data = batch_data.to(device)
                                     batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device)
                                     
                                     if(pretrain):
-                                        reps = transformer(batch_data)
-                                        batch_data = reps
+                                        reps_dict = {}
+                                        for modal in sources:
+                                            current_rep = models_dict[modal](batch_data[modal].to(device))
+                                            reps_dict[modal] = current_rep
+                                        if(len(sources) == 1):
+                                            batch_data = reps_dict[sources[0]].to(device)
+                                        else:
+                                            batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                    else:
+                                        if(len(sources) == 1):
+                                            batch_data = batch_data[sources[0]].to(device)
+                                        else:
+                                            batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                     
                                     
                                     label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                     valid_lengths = label_mask.sum(dim=1)        
@@ -204,18 +230,30 @@ for seed in seeds:
                                     if(current_step % val_every == 0):   
                                         classifier.eval()
                                         if(pretrain):
-                                            transformer.eval()
+                                            for modal in sources:
+                                                models_dict[modal].eval()                                        
                                         fold_acc_window = []
                                         #fold_acc_file = {}
                                         with torch.no_grad():
                                             for _, batch in enumerate(dev_loader):
                                                 batch_data, batch_labels, file_names = batch
-                                                batch_data = batch_data.to(device)
+                                                #batch_data = batch_data.to(device)
                                                 batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
                                         
                                                 if(pretrain):
-                                                    reps = transformer(batch_data)
-                                                    batch_data = reps
+                                                    reps_dict = {}
+                                                    for modal in sources:
+                                                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                                                        reps_dict[modal] = current_rep
+                                                    if(len(sources) == 1):
+                                                        batch_data = reps_dict[sources[0]].to(device)
+                                                    else:
+                                                        batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                                else:
+                                                    if(len(sources) == 1):
+                                                        batch_data = batch_data[sources[0]].to(device)
+                                                    else:
+                                                        batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                
                                                     
                                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                                 valid_lengths = label_mask.sum(dim=1)          
@@ -237,7 +275,7 @@ for seed in seeds:
                                             test_labels.append(current_label)
                                                         
                                         
-                                        test_dataset = SchizophreniaSegmentDataset(test_files, test_labels, max_len=segment_size)
+                                        test_dataset = SchizophreniaMMDataset(test_files, test_labels, max_len=segment_size)
                                         test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True)  
                                         
                                         
@@ -246,12 +284,23 @@ for seed in seeds:
                                         with torch.no_grad():
                                             for _, batch in enumerate(test_loader):
                                                 batch_data, batch_labels, file_names = batch
-                                                batch_data = batch_data.to(device)
+                                                #batch_data = batch_data.to(device)
                                                 batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
                                                 
                                                 if(pretrain):
-                                                    reps = transformer(batch_data)
-                                                    batch_data = reps
+                                                    reps_dict = {}
+                                                    for modal in sources:
+                                                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                                                        reps_dict[modal] = current_rep
+                                                    if(len(sources) == 1):
+                                                        batch_data = reps_dict[sources[0]].to(device)
+                                                    else:
+                                                        batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                                else:
+                                                    if(len(sources) == 1):
+                                                        batch_data = batch_data[sources[0]].to(device)
+                                                    else:
+                                                        batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                
                                                     
                                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                                 valid_lengths = label_mask.sum(dim=1)  
@@ -261,7 +310,8 @@ for seed in seeds:
                                                 
                                         classifier.train()
                                         if(pretrain):
-                                            transformer.train()
+                                            for modal in sources:
+                                                models_dict[modal].train()                                         
                                         print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
                                         if(np.mean(fold_acc_window) > 0.35):
@@ -275,7 +325,12 @@ for seed in seeds:
                         output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f)])
                 else:
                     model_name = "N/A"
-                    inp_dim = 100
+                    if(pretrain):
+                        dim_dict = {"flm":272, "gp":88, "au":136}
+                        inp_dim = sum([dim_dict[x] for x in sources])
+                    else:
+                        dim_dict = {"flm":136, "gp":11, "au":17}
+                        inp_dim = sum([dim_dict[x] for x in sources])                        
                     
                     config = {
                                 'mode'     : 'classification',
@@ -290,8 +345,7 @@ for seed in seeds:
                     torch.manual_seed(seed)
                     
                     n_fold = 5
-                    sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv",\
-                            "data/train-clean-schz_chunk_2.csv","data/train-clean-schz_chunk_3.csv"]
+                    sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
                     tables = [pd.read_csv(s, header=None) for s in sets]
                     table = pd.concat(tables, ignore_index=True).values
                     
@@ -307,12 +361,12 @@ for seed in seeds:
                     for row in table:
                         if(subset in row[0]):
                             table_filter.append(row)
-                    table = np.array(table_filter)
+                    table = np.array(table_filter)                    
                     
                     kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
                     n_val = 16
-                    segment_size = 800
+                    segment_size = 100
                     bs = 12
                     val_every = 40
                     
@@ -337,10 +391,10 @@ for seed in seeds:
                             dev_labels.append(current_label)    
                             
                         
-                        train_dataset = SchizophreniaSegmentDataset(train_files, train_labels, max_len=segment_size)
+                        train_dataset = SchizophreniaMMDataset(train_files, train_labels, max_len=segment_size)
                         train_loader = DataLoader(train_dataset, batch_size=bs, shuffle=True)
                         
-                        dev_dataset = SchizophreniaSegmentDataset(val_files, dev_labels, max_len=segment_size)
+                        dev_dataset = SchizophreniaMMDataset(val_files, dev_labels, max_len=segment_size)
                         dev_loader = DataLoader(dev_dataset, batch_size=bs, shuffle=True)  
                         
                         fold_dev_test_acc = {}
@@ -348,7 +402,6 @@ for seed in seeds:
                         #load transformer if pretrained
                         if(pretrain):
                             options = {
-                                'ckpt_file'     : model_name,
                                 'load_pretrain' : 'True',
                                 'no_grad'       : 'True',
                                 'dropout'       : 'default',
@@ -358,33 +411,53 @@ for seed in seeds:
                                 'select_layer'  : -1,
                                 'permute_input' : 'False',
                             }
-                            transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+                            models_dict = {}
+                            for modal in sources:
+                                options['ckpt_file'] = model_name_dict[modal]
+                                current_transformer = TRANSFORMER(options=options, inp_dim=0).to(device)
+                                current_transformer.train()
+                                models_dict[modal] = current_transformer                                
                             
                             # setup your downstream class model
                             classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                            classifier.train()
                             # construct the optimizer
-                            params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
-                            optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=30000)
+                            param_list = []
+                            for modal in sources:
+                                param_list += list(models_dict[modal].parameters())
+                            param_list += list(classifier.parameters())
+                            optimizer = torch.optim.AdamW(param_list, lr=3e-4)
                                 
                         ###########################
                         else:
                             #init model and optimizer
                             #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                            classifier = RnnClassifier(136, 2, config, seed).to(device)
-                            params = list(list(classifier.named_parameters()))
-                            optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=10000) 
+                            classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                            optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
+                            classifier.train()                        
                         ###########################
                             
                         for e in range(epochs):
                             num_step_per_epochs = len(train_loader)
                             for k, batch in enumerate(train_loader):
                                 batch_data, batch_labels, file_names = batch
-                                batch_data = batch_data.to(device)
+                                #batch_data = batch_data.to(device)
                                 batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device)
                                 
                                 if(pretrain):
-                                    reps = transformer(batch_data)
-                                    batch_data = reps
+                                    reps_dict = {}
+                                    for modal in sources:
+                                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                                        reps_dict[modal] = current_rep
+                                    if(len(sources) == 1):
+                                        batch_data = reps_dict[sources[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                else:
+                                    if(len(sources) == 1):
+                                        batch_data = batch_data[sources[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                               
                                 
                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                 valid_lengths = label_mask.sum(dim=1)        
@@ -398,18 +471,30 @@ for seed in seeds:
                                 if(current_step % val_every == 0):   
                                     classifier.eval()
                                     if(pretrain):
-                                        transformer.eval()
+                                        for modal in sources:
+                                            models_dict[modal].eval()                                    
                                     fold_acc_window = []
                                     #fold_acc_file = {}
                                     with torch.no_grad():
                                         for _, batch in enumerate(dev_loader):
                                             batch_data, batch_labels, file_names = batch
-                                            batch_data = batch_data.to(device)
+                                            #batch_data = batch_data.to(device)
                                             batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
                                     
                                             if(pretrain):
-                                                reps = transformer(batch_data)
-                                                batch_data = reps
+                                                reps_dict = {}
+                                                for modal in sources:
+                                                    current_rep = models_dict[modal](batch_data[modal].to(device))
+                                                    reps_dict[modal] = current_rep
+                                                if(len(sources) == 1):
+                                                    batch_data = reps_dict[sources[0]].to(device)
+                                                else:
+                                                    batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                            else:
+                                                if(len(sources) == 1):
+                                                    batch_data = batch_data[sources[0]].to(device)
+                                                else:
+                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                                                         
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)          
@@ -431,7 +516,7 @@ for seed in seeds:
                                         test_labels.append(current_label)
                                                     
                                     
-                                    test_dataset = SchizophreniaSegmentDataset(test_files, test_labels, max_len=segment_size)
+                                    test_dataset = SchizophreniaMMDataset(test_files, test_labels, max_len=segment_size)
                                     test_loader = DataLoader(test_dataset, batch_size=bs, shuffle=True)  
                                     
                                     
@@ -440,12 +525,23 @@ for seed in seeds:
                                     with torch.no_grad():
                                         for _, batch in enumerate(test_loader):
                                             batch_data, batch_labels, file_names = batch
-                                            batch_data = batch_data.to(device)
+                                            #batch_data = batch_data.to(device)
                                             batch_labels = duplicate(batch_labels, segment_size, d_bool=False).to(device) 
                                             
                                             if(pretrain):
-                                                reps = transformer(batch_data)
-                                                batch_data = reps
+                                                reps_dict = {}
+                                                for modal in sources:
+                                                    current_rep = models_dict[modal](batch_data[modal].to(device))
+                                                    reps_dict[modal] = current_rep
+                                                if(len(sources) == 1):
+                                                    batch_data = reps_dict[sources[0]].to(device)
+                                                else:
+                                                    batch_data = torch.cat([reps_dict[x] for x in sources], dim=-1).to(device)
+                                            else:
+                                                if(len(sources) == 1):
+                                                    batch_data = batch_data[sources[0]].to(device)
+                                                else:
+                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                                                  
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)  
@@ -455,7 +551,8 @@ for seed in seeds:
                                             
                                     classifier.train()
                                     if(pretrain):
-                                        transformer.train()
+                                        for modal in sources:
+                                            models_dict[modal].train()                                    
                                     print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
                                     if(np.mean(fold_acc_window) > 0.35):

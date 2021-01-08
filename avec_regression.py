@@ -45,26 +45,16 @@ def concordance_correlation_coefficient(y_true, y_pred,
     return numerator/denominator
 
 output = []
+subset = ["gp", "au"]
+model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
+model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
+model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
+model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
+
 for seed in seeds:
     torch.manual_seed(seed)
     
     batch_size = 8
-    #pretrain_options = [True, False]
-    #model_name_dict = {
-        #"result/result_transformer/flm_d256_wdev/model_d256_dev.ckpt":256,
-        #"result/result_transformer/flm_d512_m25_c12/states-500000.ckpt":512,
-        #"result/result_transformer/flm_full_d272_wdev/model_d272_dev.ckpt":272,
-        #"result/result_transformer/flm_full_d272_wdev_25mask/states-500000.ckpt":272,
-        #} 
-    
-    
-    model_name_dict = {
-        #"result/result_transformer/flm_small/states-250000.ckpt":272,
-        "result/result_transformer/flm_base/states-250000.ckpt":272,
-        #"result/result_transformer/flm_large_1mask/best_160_save.ckpt":544,
-        #"result/result_transformer/flm_large/states-250000.ckpt":544,
-        #"result/result_transformer/flm_large_run2/states-100000.ckpt":544,
-    } 
     n_steps = 4000
     
     eval_every = 40
@@ -114,10 +104,16 @@ for seed in seeds:
     pretrain_option = True
     
     if(pretrain_option):
-        for model_name in model_name_dict.keys():
+        for i in range(1):
             dev_test_scores = {}
             dev_score_break_down = {}
-            inp_dim = model_name_dict[model_name]
+            if(pretrain_option):
+                dim_dict = {"flm":272, "gp":88, "au":136}
+                inp_dim = sum([dim_dict[x] for x in subset])
+            else:
+                dim_dict = {"flm":136, "gp":11, "au":17}
+                inp_dim = sum([dim_dict[x] for x in subset])
+                
             config = {
                         'mode'     : 'regression',
                         'sample_rate' : 1,
@@ -125,8 +121,10 @@ for seed in seeds:
                         'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                         'concat': 1, 'layers': 3, 'linear': False,
                     }        
+            
+            
             options = {
-                'ckpt_file'     : model_name,
+                
                 'load_pretrain' : 'True',
                 'no_grad'       : 'True',
                 'dropout'       : 'default',
@@ -136,26 +134,46 @@ for seed in seeds:
                 'select_layer'  : -1,
                 'permute_input' : 'False',
             }
-            transformer = TRANSFORMER(options=options, inp_dim=0) # set `inpu_dim=0` to auto load the `inp_dim` from `ckpt_file`
+            models_dict = {}
+            for modal in subset:
+                options['ckpt_file'] = model_name_dict[modal]
+                current_transformer = TRANSFORMER(options=options, inp_dim=0).to(device)
+                current_transformer.train()
+                models_dict[modal] = current_transformer            
+            
             
             # setup your downstream class model
             classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
-            # construct the optimizer
-            params = list(list(transformer.named_parameters()) + list(classifier.named_parameters()))
-            #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)        
-            optimizer = torch.optim.AdamW(list(classifier.parameters())+list(transformer.parameters()), lr=3e-4)
+            classifier.train()
+            param_list = []
+            for modal in subset:
+                param_list += list(models_dict[modal].parameters())
+            param_list += list(classifier.parameters())
+            optimizer = torch.optim.AdamW(param_list, lr=3e-4)
+            
             train_losses = []
             for e in range(epochs):
                 num_step_per_epochs = len(train_loader)
                 
                 for k, batch in enumerate(train_loader):
                     batch_data, batch_scores, participant_id = batch
-                    batch_data = batch_data.to(device)
+                    #batch_data = batch_data.to(device)
                     batch_scores = batch_scores.to(device)
                     
                     if(pretrain_option):
-                        reps = transformer(batch_data)
-                        batch_data = reps
+                        reps_dict = {}
+                        for modal in subset:
+                            current_rep = models_dict[modal](batch_data[modal].to(device))
+                            reps_dict[modal] = current_rep
+                        if(len(subset) == 1):
+                            batch_data = reps_dict[subset[0]].to(device)
+                        else:
+                            batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                    else:
+                        if(len(subset) == 1):
+                            batch_data = batch_data[subset[0]].to(device)
+                        else:
+                            batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                     
                     
                     label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                     valid_lengths = label_mask.sum(dim=1)        
@@ -170,19 +188,32 @@ for seed in seeds:
                     if(current_step % eval_every == 0):      
                         classifier.eval()
                         if(pretrain_option):
-                            transformer.eval()
+                            for modal in subset:
+                                models_dict[modal].eval()
+                                
                         fold_preds = []
                         fold_true = []
                         file_id_scores_dev = {}
                         with torch.no_grad():
                             for _, batch in enumerate(dev_loader):
                                 batch_data, batch_scores, file_names = batch
-                                batch_data = batch_data.to(device)
+                                #batch_data = batch_data.to(device)
                                 batch_scores = batch_scores.to(device)
                     
                                 if(pretrain_option):
-                                    reps = transformer(batch_data)
-                                    batch_data = reps
+                                    reps_dict = {}
+                                    for modal in subset:
+                                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                                        reps_dict[modal] = current_rep
+                                    if(len(subset) == 1):
+                                        batch_data = reps_dict[subset[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                                else:
+                                    if(len(subset) == 1):
+                                        batch_data = batch_data[subset[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                                 
                     
                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                 valid_lengths = label_mask.sum(dim=1)          
@@ -229,9 +260,20 @@ for seed in seeds:
                                 batch_scores = batch_scores.to(device)
                     
                                 if(pretrain_option):
-                                    reps = transformer(batch_data)
-                                    batch_data = reps
-                    
+                                    reps_dict = {}
+                                    for modal in subset:
+                                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                                        reps_dict[modal] = current_rep
+                                    if(len(subset) == 1):
+                                        batch_data = reps_dict[subset[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                                else:
+                                    if(len(subset) == 1):
+                                        batch_data = batch_data[subset[0]].to(device)
+                                    else:
+                                        batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                                 
+                                
                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                 valid_lengths = label_mask.sum(dim=1)          
                     
@@ -268,7 +310,8 @@ for seed in seeds:
                             train_losses = []
                             classifier.train()
                             if(pretrain_option):
-                                transformer.train()  
+                                for modal in subset:
+                                    models_dict[modal].train()                              
                         except:
                             train_losses = []
                             break
@@ -288,7 +331,13 @@ for seed in seeds:
                     'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                     'concat': 1, 'layers': 3, 'linear': False,
                 }        
-        inp_dim = 136
+        if(pretrain_option):
+            dim_dict = {"flm":272, "gp":88, "au":136}
+            inp_dim = sum([dim_dict[x] for x in subset])
+        else:
+            dim_dict = {"flm":136, "gp":11, "au":17}
+            inp_dim = sum([dim_dict[x] for x in subset])
+            
         # setup your downstream class model
         classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
         # construct the optimizer
@@ -300,12 +349,23 @@ for seed in seeds:
             num_step_per_epochs = len(train_loader)
             for k, batch in enumerate(train_loader):
                 batch_data, batch_scores, participant_id = batch
-                batch_data = batch_data.to(device)
+                #batch_data = batch_data.to(device)
                 batch_scores = batch_scores.to(device)
     
                 if(pretrain_option):
-                    reps = transformer(batch_data)
-                    batch_data = reps
+                    reps_dict = {}
+                    for modal in subset:
+                        current_rep = models_dict[modal](batch_data[modal].to(device))
+                        reps_dict[modal] = current_rep
+                    if(len(subset) == 1):
+                        batch_data = reps_dict[subset[0]].to(device)
+                    else:
+                        batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                else:
+                    if(len(subset) == 1):
+                        batch_data = batch_data[subset[0]].to(device)
+                    else:
+                        batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                 
     
                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                 valid_lengths = label_mask.sum(dim=1)        
@@ -326,12 +386,23 @@ for seed in seeds:
                     with torch.no_grad():
                         for _, batch in enumerate(dev_loader):
                             batch_data, batch_scores, file_names = batch
-                            batch_data = batch_data.to(device)
+                            #batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
     
                             if(pretrain_option):
-                                reps = transformer(batch_data)
-                                batch_data = reps
+                                reps_dict = {}
+                                for modal in subset:
+                                    current_rep = models_dict[modal](batch_data[modal].to(device))
+                                    reps_dict[modal] = current_rep
+                                if(len(subset) == 1):
+                                    batch_data = reps_dict[subset[0]].to(device)
+                                else:
+                                    batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                            else:
+                                if(len(subset) == 1):
+                                    batch_data = batch_data[subset[0]].to(device)
+                                else:
+                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                             
     
                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                             valid_lengths = label_mask.sum(dim=1)          
@@ -373,12 +444,23 @@ for seed in seeds:
                     with torch.no_grad():
                         for _, batch in enumerate(test_loader):
                             batch_data, batch_scores, file_names = batch
-                            batch_data = batch_data.to(device)
+                            #batch_data = batch_data.to(device)
                             batch_scores = batch_scores.to(device)
     
                             if(pretrain_option):
-                                reps = transformer(batch_data)
-                                batch_data = reps
+                                reps_dict = {}
+                                for modal in subset:
+                                    current_rep = models_dict[modal](batch_data[modal].to(device))
+                                    reps_dict[modal] = current_rep
+                                if(len(subset) == 1):
+                                    batch_data = reps_dict[subset[0]].to(device)
+                                else:
+                                    batch_data = torch.cat([reps_dict[x] for x in subset], dim=-1).to(device)
+                            else:
+                                if(len(subset) == 1):
+                                    batch_data = batch_data[subset[0]].to(device)
+                                else:
+                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                             
     
                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                             valid_lengths = label_mask.sum(dim=1)          

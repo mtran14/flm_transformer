@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
-from audtorch.metrics.functional import concordance_cc
+#from audtorch.metrics.functional import concordance_cc
 
 ###########################
 # FEED FORWARD CLASSIFIER #
@@ -273,8 +273,140 @@ class RnnClassifier(nn.Module):
             elif self.mode == 'regression':
                 loss1 = torch.sqrt(self.criterion(result, labels)) 
                 loss2 = concordance_cc(result, labels)
-                loss = -torch.abs(loss2) + loss1/10000
+                #loss = -torch.abs(loss2) + loss1/10000
+                loss = -torch.abs(loss2)
+
+            # statistic for accuracy
+            if self.mode == 'classification':
+                correct, valid = self.statistic(result, labels)
+            elif self.mode == 'regression':
+                # correct and valid has no meaning when in regression mode
+                # just to make the outside wrapper can correctly function
+                correct, valid = torch.LongTensor([1]), torch.LongTensor([1])
+
+            return loss, result.detach().cpu(), correct, valid
+
+        return result
+    
+class RnnClassifierMosi(nn.Module):
+    def __init__(self, input_dim, class_num, dconfig, seed):
+        # The class_num for regression mode should be 1
+
+        super(RnnClassifierMosi, self).__init__()
+        torch.manual_seed(seed)
+        self.config = dconfig
+        self.dropout = nn.Dropout(p=dconfig['drop'])
+
+        linears = []
+        last_dim = input_dim
+        for linear_dim in self.config['pre_linear_dims']:
+            linears.append(nn.Linear(last_dim, linear_dim))
+            last_dim = linear_dim
+        self.pre_linears = nn.ModuleList(linears)
+
+        hidden_size = self.config['hidden_size']
+        self.rnn = None
+        if hidden_size > 0:
+            self.rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=2, dropout=dconfig['drop'],
+                            batch_first=True, bidirectional=False)
+            last_dim = hidden_size
+            
+
+        linears = []
+        for linear_dim in self.config['post_linear_dims']:
+            linears.append(nn.Linear(last_dim, linear_dim))
+            last_dim = linear_dim
+        self.post_linears = nn.ModuleList(linears)
+
+        self.act_fn = torch.nn.functional.relu
+        self.out = nn.Linear(last_dim, class_num)
+        
+        self.mode = self.config['mode']
+        if self.mode == 'classification':
+            self.out_fn = nn.LogSoftmax(dim=-1)
+            self.criterion = nn.CrossEntropyLoss(ignore_index=-100)
+        elif self.mode == 'regression':
+            self.criterion = nn.L1Loss()
+        else:
+            raise NotImplementedError('Only classification/regression modes are supported')
+        
+        if(self.mode == "regression"):
+            #for layer in self.pre_linears:
+                #init.uniform(layer.weight, -1, 1)
+                
+            for layer in self.post_linears:
+                init.uniform(layer.weight, -10, 10)
+                
+            #for p in self.rnn.parameters():
+                #if(p.dim() > 1):
+                    #init.uniform(p, -1, 1)
+                    
+            
+        
+
+    def statistic(self, probabilities, labels):
+        assert(len(probabilities.shape) > 1)
+        assert(probabilities.unbind(dim=-1)[0].shape == labels.shape)
+
+        valid_count = torch.LongTensor([len(labels)])
+        correct_count = ((probabilities.argmax(dim=-1) == labels).type(torch.LongTensor)).sum()
+        return correct_count, valid_count
+
+
+    def forward(self, features, labels=None, valid_lengths=None):
+        assert(valid_lengths is not None), 'Valid_lengths is required.'
+        # features: (batch_size, seq_len, feature)
+        # labels: (batch_size,), one utterance to one label
+        # valid_lengths: (batch_size, )
+        seq_len = features.size(1)
+
+        if self.config['sample_rate'] > 1:
+            features = features[:, torch.arange(0, seq_len, self.config['sample_rate']), :]
+            valid_lengths = valid_lengths // self.config['sample_rate']
+
+        for linear in self.pre_linears:
+            features = linear(features)
+            features = self.act_fn(features)
+            features = self.dropout(features)
+
+        if self.rnn is not None:
+            packed = pack_padded_sequence(features, valid_lengths, batch_first=True, enforce_sorted=False)
+            _, h_n = self.rnn(packed)
+            hidden = h_n[-1, :, :]
+            # cause h_n directly contains info for final states
+            # it will be easier to use h_n as extracted embedding
+        else:
+            hidden = features.mean(dim=1)
+        
+        for linear in self.post_linears:
+            hidden = linear(hidden)
+            hidden = self.act_fn(hidden)
+            hidden = self.dropout(hidden)
+
+        logits = self.out(hidden)
+
+        if self.mode == 'classification':
+            result = self.out_fn(logits)
+            # result: (batch_size, class_num)
+        elif self.mode == 'regression':
+            result = logits.reshape(-1)
+            # result: (batch_size, )
+        else:
+            raise NotImplementedError
+        
+        if labels is not None:
+            if self.mode == 'classification':
+                loss = self.criterion(hidden, labels)
+            elif self.mode == 'regression':
+                loss1 = self.criterion(result, labels) / 10
+                #loss2 = concordance_cc(result, labels)
+                #loss = -torch.abs(loss2) + loss1/10000
                 #loss = -torch.abs(loss2)
+                vx = result - torch.mean(result)
+                vy = labels - torch.mean(labels)
+                
+                cost = torch.sum(vx * vy) / (torch.sqrt(torch.sum(vx ** 2)) * torch.sqrt(torch.sum(vy ** 2)))                
+                loss = loss1 - cost
 
             # statistic for accuracy
             if self.mode == 'classification':
