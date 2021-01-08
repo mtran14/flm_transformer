@@ -67,9 +67,12 @@ subsets = ["describe"]
     #"result/result_transformer/flm_large/states-250000.ckpt":544,
     #} 
     
-model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
-model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
-model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
+#model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
+#model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
+#model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
+model_name_flm = "result/result_transformer/flm_base/states-250000.ckpt"
+model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
+model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 
 seeds = list(np.random.randint(0,1000,20))
