@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
-#from audtorch.metrics.functional import concordance_cc
+from audtorch.metrics.functional import concordance_cc
 
 ###########################
 # FEED FORWARD CLASSIFIER #
