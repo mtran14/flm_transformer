@@ -89,14 +89,15 @@ class AvecDataset(Dataset):
             current_score = scores[i]
             participant_id = int(re.findall(r'\d+', file_paths[i])[0])
             index = 0
+            
             while(index + max_len <= current_data.shape[0]):
                 current_chunk = current_data[index:index+max_len,:]
                 facial_landmarks = current_chunk[:,0:136]
                 gaze_pose = current_chunk[:,136:147]
                 aus = current_chunk[:,147:164]
-                data_dict = {"flm":pad(facial_landmarks, max_len),\
-                             "gp":pad(gaze_pose, max_len), \
-                             "au":pad(aus, max_len)}                
+                data_dict = {"flm":facial_landmarks,\
+                             "gp":gaze_pose, \
+                             "au":aus}                
                 self.X.append([data_dict, current_score, participant_id])
                 index += max_len
                 
