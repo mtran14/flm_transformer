@@ -56,7 +56,10 @@ class SchizophreniaMMDataset(Dataset):
         for i in range(len(file_paths)):
             file = file_paths[i]
             label = labels[i]
-            current_data = np.load(file[3:])
+            try:
+                current_data = np.load(file[3:])
+            except:
+                current_data = np.load(file)
             if(len(current_data) <= 2):
                 continue
             
