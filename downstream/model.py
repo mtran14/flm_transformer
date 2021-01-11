@@ -274,7 +274,8 @@ class RnnClassifier(nn.Module):
                 loss1 = torch.sqrt(self.criterion(result, labels)) 
                 loss2 = concordance_cc(result, labels)
                 #loss = -torch.abs(loss2) + loss1/10000
-                loss = -torch.abs(loss2)
+                #loss = -torch.abs(loss2)
+                loss = loss1
 
             # statistic for accuracy
             if self.mode == 'classification':
