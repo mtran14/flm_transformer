@@ -262,7 +262,7 @@ for seed in seeds:
                         with torch.no_grad():
                             for _, batch in enumerate(test_loader):
                                 batch_data, batch_scores, file_names = batch
-                                batch_data = batch_data.to(device)
+                                #batch_data = batch_data.to(device)
                                 batch_scores = batch_scores.to(device)
                     
                                 if(pretrain_option):
