@@ -45,7 +45,7 @@ def concordance_correlation_coefficient(y_true, y_pred,
     return numerator/denominator
 
 output = []
-subset = ["flm", "gp", "au"]
+subset = ["au"]
 #model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
 #model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
 #model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
