@@ -25,6 +25,7 @@ else:
     output = []
     for i in range(data.shape[0]):
         current_row = data[i]
+        print(current_row)
         current_path = current_row[1]
         current_path = current_path.replace('vox2_npy_3fps_gp', 'vox2_npy_3fps_augp')
         current_length = current_row[2]
