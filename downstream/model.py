@@ -14,8 +14,9 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
-from audtorch.metrics.functional import concordance_cc
+#from audtorch.metrics.functional import concordance_cc
 
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
 ###########################
 # FEED FORWARD CLASSIFIER #
 ###########################
@@ -421,6 +422,128 @@ class RnnClassifierMosi(nn.Module):
 
         return result
 
+class AvecModel(nn.Module):
+    def __init__(self, input_dim, class_num, dconfig, seed):
+        super(AvecModel, self).__init__()
+        '''contain two GRU, one for local segment of size n seconds,
+        the other global GRU takes output of local GRU to make predictions
+        '''
+        torch.manual_seed(seed)    
+        self.config = dconfig
+        self.dropout = nn.Dropout(p=dconfig['drop'])
+        self.t_local = dconfig['t_local']
+        self.t_global = dconfig['t_global']
+
+        linears = []
+        last_dim = input_dim
+        for linear_dim in self.config['pre_linear_dims']:
+            linears.append(nn.Linear(last_dim, linear_dim))
+            last_dim = linear_dim
+        self.pre_linears = nn.ModuleList(linears)
+
+        hidden_size = self.config['hidden_size']
+        self.local_rnn = None
+        self.global_rnn = None
+        if hidden_size > 0:
+            self.local_rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
+                            batch_first=True, bidirectional=False)
+            last_dim = hidden_size
+            self.global_rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
+                            batch_first=True, bidirectional=False)
+            
+
+        linears = []
+        for linear_dim in self.config['post_linear_dims']:
+            linears.append(nn.Linear(last_dim, linear_dim))
+            last_dim = linear_dim
+        self.post_linears = nn.ModuleList(linears)
+
+        self.act_fn = torch.nn.functional.relu
+        self.out = nn.Linear(last_dim, class_num)
+        
+        self.mode = self.config['mode']
+        if self.mode == 'classification':
+            self.out_fn = nn.LogSoftmax(dim=-1)
+            self.criterion = nn.CrossEntropyLoss(ignore_index=-100)
+        elif self.mode == 'regression':
+            self.criterion = nn.MSELoss()
+        else:
+            raise NotImplementedError('Only classification/regression modes are supported')            
+        
+    def forward(self, features, labels=None):
+        # features: (batch_size, seq_len, feature)
+        # labels: (batch_size,), one utterance to one label
+        # valid_lengths: (batch_size, )
+        seq_len = features.size(1)
+        local_length = self.config['t_local']
+        global_length = self.config['t_global']
+        batch_size = features.size(0)
+        n_chunks = seq_len // local_length
+        subsequences = []
+        for i in range(n_chunks):
+            tmp = features[:, i*local_length : (i+1)*local_length ,:]
+            subsequences.append(tmp)
+
+        pre_linear_outputs = []
+        for i in range(n_chunks):
+            current_feature = subsequences[i]
+            for linear in self.pre_linears:
+                current_feature = linear(current_feature)
+                current_feature = self.act_fn(current_feature)
+                current_feature = self.dropout(current_feature)
+            pre_linear_outputs.append(current_feature)
+            
+        output_local_rnn = torch.zeros(batch_size, global_length, self.config['hidden_size'])
+        for i in range(n_chunks):
+            if(i >= global_length):
+                continue
+            current_feature = pre_linear_outputs[i]
+            packed = pack_padded_sequence(current_feature, [local_length]*batch_size, batch_first=True, enforce_sorted=False)
+            _, h_n = self.local_rnn(packed)
+            hidden_local = h_n[-1, :, :] #batch_size x hidden_size
+            for j in range(batch_size):
+                output_local_rnn[j, i, :] = hidden_local[j, :]
+                
+        valid_length_global = [global_length] * batch_size
+        packed_global = pack_padded_sequence(output_local_rnn.to(device), valid_length_global, batch_first=True, enforce_sorted=False)
+        _, h_n = self.global_rnn(packed_global)
+        hidden = h_n[-1, :, :] #batch_size x hidden_size        
+            
+        
+        for linear in self.post_linears:
+            hidden = linear(hidden)
+            hidden = self.act_fn(hidden)
+            hidden = self.dropout(hidden)
+
+        logits = self.out(hidden)
+
+        if self.mode == 'classification':
+            result = self.out_fn(logits)
+            # result: (batch_size, class_num)
+        elif self.mode == 'regression':
+            result = logits.reshape(-1)
+            # result: (batch_size, )
+        else:
+            raise NotImplementedError
+        
+        if labels is not None:
+            if self.mode == 'classification':
+                loss = self.criterion(hidden, labels)
+            elif self.mode == 'regression':
+                loss = self.criterion(result, labels)
+
+            # statistic for accuracy
+            if self.mode == 'classification':
+                correct, valid = self.statistic(result, labels)
+            elif self.mode == 'regression':
+                # correct and valid has no meaning when in regression mode
+                # just to make the outside wrapper can correctly function
+                correct, valid = torch.LongTensor([1]), torch.LongTensor([1])
+
+            return loss, result.detach().cpu(), correct, valid
+
+        return result    
+    
 
 ##################
 # DUMMY UPSTREAM #

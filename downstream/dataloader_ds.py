@@ -105,6 +105,33 @@ class AvecDataset(Dataset):
         return len(self.X)
     
     def __getitem__(self, index):
+        return self.X[index]   
+    
+class AvecDatasetFull(Dataset):
+    def __init__(self, file_paths, scores, max_len=5000):
+        assert len(file_paths) == len(scores)
+        self.X = []
+        pad = lambda a, i: a[0: i,:] if a.shape[0] > i else np.concatenate((a, np.zeros((i - a.shape[0],a.shape[1]))), axis=0)
+        for i in range(len(scores)):
+            try:
+                current_data = np.load(file_paths[i]) #n_frames x n_features
+            except:
+                continue
+            current_score = scores[i]
+            participant_id = int(re.findall(r'\d+', file_paths[i])[0])
+            
+            facial_landmarks = current_data[:,0:136]
+            gaze_pose = current_data[:,136:147]
+            aus = current_data[:,147:164]
+            data_dict = {"flm":pad(facial_landmarks,max_len),\
+                         "gp":pad(gaze_pose,max_len), \
+                         "au":pad(aus,max_len)}                
+            self.X.append([data_dict, current_score, participant_id]) 
+                
+    def __len__(self):
+        return len(self.X)
+    
+    def __getitem__(self, index):
         return self.X[index]    
     
 class MosiDataset(Dataset):

@@ -1,8 +1,8 @@
 import torch
 from transformer.nn_transformer import TRANSFORMER
-from downstream.model import example_classifier, RnnClassifier
+from downstream.model import example_classifier, RnnClassifier, AvecModel
 from downstream.solver import get_optimizer
-from downstream.dataloader_ds import AvecDataset
+from downstream.dataloader_ds import AvecDataset, AvecDatasetFull
 import pandas as pd
 from torch.utils.data import DataLoader
 import re
@@ -12,9 +12,23 @@ import sys
 import os
 from sklearn.metrics import mean_squared_error
 from torch.nn import init
-from audtorch.metrics.functional import concordance_cc
+#from audtorch.metrics.functional import concordance_cc
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+#config = {
+                        #'mode'     : 'regression',
+                        #'sample_rate' : 1,
+                        #'hidden_size'       : 64,
+                        #'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
+                        #'concat': 1, 'layers': 3, 'linear': False,
+                        #'t_local': 45, 't_global': 150
+        #}
+
+#classifier = AvecModel(28, 1, config, 3).to(device)
+#features = torch.randn(8,1500, 28)
+#labels = torch.randn(8)
+#loss, result, correct, valid = classifier.forward(features, labels)
 
 seeds = list(np.random.randint(0,1000,20))
 def get_path(participant_ids, processed_path):
@@ -83,9 +97,9 @@ for seed in seeds:
         test_scores = (np.array(test_scores) - 13.5)/27
     
     
-    train_dataset = AvecDataset(train_paths, list(train_scores), max_len=max_len)
-    dev_dataset = AvecDataset(dev_paths, dev_scores, max_len=max_len)
-    test_dataset = AvecDataset(test_paths, test_scores, max_len=max_len)
+    train_dataset = AvecDatasetFull(train_paths, list(train_scores), max_len=max_len)
+    dev_dataset = AvecDatasetFull(dev_paths, dev_scores, max_len=max_len)
+    test_dataset = AvecDatasetFull(test_paths, test_scores, max_len=max_len)
     
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     dev_loader = DataLoader(dev_dataset, batch_size=batch_size, shuffle=True)
@@ -105,7 +119,7 @@ for seed in seeds:
     
     
     epochs = n_steps//len(train_loader)
-    pretrain_option = True
+    pretrain_option = False
     
     if(pretrain_option):
         for i in range(1):
@@ -124,6 +138,7 @@ for seed in seeds:
                         'hidden_size'       : 64,
                         'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                         'concat': 1, 'layers': 3, 'linear': False,
+                        't_local': 45, 't_global': 150
                     }        
             
             
@@ -147,7 +162,7 @@ for seed in seeds:
             
             
             # setup your downstream class model
-            classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
+            classifier = AvecModel(inp_dim, 1, config, seed).to(device)
             classifier.train()
             param_list = []
             for modal in subset:
@@ -345,7 +360,7 @@ for seed in seeds:
             inp_dim = sum([dim_dict[x] for x in subset])
             
         # setup your downstream class model
-        classifier = RnnClassifier(inp_dim, 1, config, seed).to(device)
+        classifier = AvecModel(inp_dim, 1, config, seed).to(device)
         # construct the optimizer
         params = list(list(classifier.named_parameters()))
         #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)     
