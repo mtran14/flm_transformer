@@ -351,6 +351,7 @@ for seed in seeds:
                     'hidden_size'       : 64,
                     'pre_linear_dims'       : [32], 'post_linear_dims': [32],'drop':0.1,
                     'concat': 1, 'layers': 3, 'linear': False,
+                    't_local': 45, 't_global': 150
                 }        
         if(pretrain_option):
             dim_dict = {"flm":272, "gp":88, "au":136}
