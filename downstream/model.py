@@ -470,7 +470,7 @@ class AvecModel(nn.Module):
         else:
             raise NotImplementedError('Only classification/regression modes are supported')            
         
-    def forward(self, features, labels=None):
+    def forward(self, features, labels=None, valid_lengths=None):
         # features: (batch_size, seq_len, feature)
         # labels: (batch_size,), one utterance to one label
         # valid_lengths: (batch_size, )
