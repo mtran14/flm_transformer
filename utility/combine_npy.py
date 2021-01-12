@@ -28,5 +28,9 @@ else:
         current_path = current_row[1]
         current_path = current_path.replace('vox2_npy_3fps_gp', 'vox2_npy_3fps_augp')
         current_length = current_row[2]
+        try:
+            data = np.load(current_path)
+        except:
+            continue
         output.append([current_path, current_length, 'None'])
     pd.DataFrame(output).to_csv(output_file, header=header[1:])
