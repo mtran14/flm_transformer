@@ -362,6 +362,7 @@ for seed in seeds:
             
         # setup your downstream class model
         classifier = AvecModel(inp_dim, 1, config, seed).to(device)
+        classifier.train()
         # construct the optimizer
         params = list(list(classifier.named_parameters()))
         #optimizer = get_optimizer(params=params, lr=4e-3, warmup_proportion=0.7, training_steps=25000)     
