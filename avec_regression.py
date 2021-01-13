@@ -395,6 +395,7 @@ for seed in seeds:
     
                 optimizer.zero_grad()
                 loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
+                print(loss)
                 loss.backward()
                 optimizer.step()    
     
