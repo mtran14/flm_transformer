@@ -125,7 +125,8 @@ for seed in seeds:
             dev_test_scores = {}
             dev_score_break_down = {}
             if(pretrain_option):
-                dim_dict = {"flm":272, "gp":88, "au":136}
+                #dim_dict = {"flm":272, "gp":88, "au":136}
+                dim_dict = {"flm":272, "gp":84, "au":120}
                 inp_dim = sum([dim_dict[x] for x in subset])
             else:
                 dim_dict = {"flm":136, "gp":11, "au":17}
