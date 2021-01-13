@@ -572,7 +572,7 @@ for seed in seeds:
                     print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f))
                     output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f)])
                     
-pd.DataFrame(output).to_csv("multiple_seed_schz_clf_results.csv", header=None, index=False)
+pd.DataFrame(output).to_csv("multiple_seed_schz_clf_results_gpau.csv", header=None, index=False)
                             
 
 #123 -> 0.7283333333333333 / 0.51380952381
