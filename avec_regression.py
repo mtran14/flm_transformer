@@ -60,13 +60,12 @@ def concordance_correlation_coefficient(y_true, y_pred,
 
 output = []
 subset = ["gp", "au"]
-#model_name_flm = "../GoogleDrive/flm_models/states-250000.ckpt"
-#model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
-#model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
-#model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 model_name_flm = "result/result_transformer/flm_base/states-250000.ckpt"
-model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
-model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
+#model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
+#model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
+model_name_au = "result/result_transformer/au_aalbert_3L/states-200000.ckpt"
+model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
+model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 
 for seed in seeds:
