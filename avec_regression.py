@@ -395,14 +395,13 @@ for seed in seeds:
     
                 optimizer.zero_grad()
                 loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
-                loss.backward()
-                optimizer.step()    
+                if(loss.item() == loss.item()):
+                    loss.backward()
+                    optimizer.step()    
     
                 current_step = e * num_step_per_epochs + k
                 if(current_step % eval_every == 0):      
                     classifier.eval()
-                    if(pretrain_option):
-                        transformer.eval()
                     fold_preds = []
                     fold_true = []
                     file_id_scores_dev = {}
