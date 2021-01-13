@@ -12,7 +12,7 @@ import sys
 import os
 from sklearn.metrics import mean_squared_error
 from torch.nn import init
-#from audtorch.metrics.functional import concordance_cc
+from audtorch.metrics.functional import concordance_cc
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
