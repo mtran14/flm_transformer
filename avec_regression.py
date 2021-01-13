@@ -76,7 +76,7 @@ for seed in seeds:
     n_steps = 4000
     
     eval_every = 40
-    max_len = 500
+    max_len = 5000
     norm_label = False
     
     train_info, dev_info, test_info = "data/train_split.csv", "data/dev_split.csv", "data/test_split.csv"
