@@ -569,8 +569,8 @@ for seed in seeds:
                                             
                                             predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
                                             predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
-                                            print(batch_labels)
                                             label_m = list(batch_labels.detach().cpu().numpy())
+                                            print(predictions_m, label_m)
                                             if(len(predictions_m) == len(label_m)):
                                                 pred_all_test += predictions_m
                                                 label_all_test += label_m
