@@ -119,7 +119,7 @@ for seed in seeds:
     
     
     epochs = n_steps//len(train_loader)
-    pretrain_option = False
+    pretrain_option = True
     
     if(pretrain_option):
         for i in range(1):
