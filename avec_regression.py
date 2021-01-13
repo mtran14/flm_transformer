@@ -335,7 +335,7 @@ for seed in seeds:
                                     models_dict[modal].train()                              
                         except:
                             train_losses = []
-                            break
+                            pass
             chosen_stats = dev_test_scores[min(dev_test_scores)]
             chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
             print("BEST PERFORMING SCORES: ", model_name, chosen_stats)
@@ -395,7 +395,6 @@ for seed in seeds:
     
                 optimizer.zero_grad()
                 loss, result, correct, valid = classifier.forward(batch_data.float(), batch_scores.float(), valid_lengths)
-                print(loss)
                 loss.backward()
                 optimizer.step()    
     
@@ -520,10 +519,9 @@ for seed in seeds:
                                   "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
                         dev_test_scores[dev_score] = [test_rmse, test_ccc]
                         classifier.train()
-                        if(pretrain_option):
-                            transformer.train()  
                     except:
-                        break    
+                        classifier.train()
+                        pass    
          
         chosen_stats = dev_test_scores[min(dev_test_scores)]
         chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
