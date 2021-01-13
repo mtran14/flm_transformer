@@ -71,14 +71,17 @@ subsets = ["watch", "describe", "feel"]
 #model_name_au = "../GoogleDrive/flm_models/au_base.ckpt"
 #model_name_gp = "../GoogleDrive/flm_models/gp_base.ckpt"
 model_name_flm = "result/result_transformer/flm_base/states-250000.ckpt"
-model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
-model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
+#model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
+#model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
+model_name_au = "result/result_transformer/au_aalbert_3L/states-200000.ckpt"
+model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
+model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 
 seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
 pretrain_option = [False,True]
-sources = ["flm", "au", "gp"]
+sources = ["au", "gp"]
 
 output = []
 for seed in seeds:
@@ -88,7 +91,8 @@ for seed in seeds:
                 if(pretrain):
                     for i in range(1):
                         if(pretrain):
-                            dim_dict = {"flm":272, "gp":88, "au":136}
+                            #dim_dict = {"flm":272, "gp":88, "au":136}
+                            dim_dict = {"flm":272, "gp":84, "au":120}
                             inp_dim = sum([dim_dict[x] for x in sources])
                         else:
                             dim_dict = {"flm":136, "gp":11, "au":17}
