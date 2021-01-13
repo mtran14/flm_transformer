@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader
 import re
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import torch.nn as nn
@@ -56,6 +56,14 @@ def filter_files(root_files, list_files, drugCond=None):
             if(keep):
                 output_files.append(pos_file)
     return output_files
+
+def reverse_pred(input_list):
+    output_list = []
+    for x in range(len(input_list)):
+        if(x == 0):
+            output_list.append(1)
+        else:
+            output_list.append(0)
 
 
 #subsets = ["watch", "describe", "feel"]
@@ -529,6 +537,9 @@ for seed in seeds:
                                     
                                     fold_acc_window_test = []
                                     fold_acc_file_test = {}
+                                    
+                                    pred_all_test = []
+                                    label_all_test = []
                                     with torch.no_grad():
                                         for _, batch in enumerate(test_loader):
                                             batch_data, batch_labels, file_names = batch
@@ -556,11 +567,18 @@ for seed in seeds:
                                             batch_acc = correct.item()/valid.item() if val_acc > 0.35 else 1-correct.item()/valid.item()
                                             fold_acc_window_test.append(batch_acc)
                                             
+                                            predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
+                                            predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
+                                            label_m = list(batch_labels.detach().cpu().numpy())
+                                            if(len(predictions_m) == len(label_m)):
+                                                pred_all_test += predictions_m
+                                                label_all_test += label_m
+                                            
                                     classifier.train()
                                     if(pretrain):
                                         for modal in sources:
                                             models_dict[modal].train()                                    
-                                    print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
+                                    print("Dev: ", np.mean(fold_acc_window), "Test: ", accuracy_score(label_all_test, pred_all_test), f1_score(label_all_test, pred_all_test), \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
                                     if(np.mean(fold_acc_window) > 0.35):
                                         fold_dev_test_acc[np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
