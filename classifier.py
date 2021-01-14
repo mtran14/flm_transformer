@@ -89,7 +89,7 @@ model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp,
 
 seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
-pretrain_option = [False,True]
+pretrain_option = [True,False]
 sources = ["gp", "au"]
 
 output = []
