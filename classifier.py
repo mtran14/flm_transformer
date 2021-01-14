@@ -418,7 +418,7 @@ for seed in seeds:
                     bs = 12
                     val_every = 40
                     
-                    epochs = 15
+                    epochs = 40
                     
                     overall_w = []
                     overall_f = []
