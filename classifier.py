@@ -369,7 +369,7 @@ for seed in seeds:
                             print("Fold Acc: ", fold_test_acc)
                             overall_f.append(fold_test_acc)                            
                         print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", np.mean(overall_f, axis=0))
-                        output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
+                        output.append([seed, subset, drugcond, pretrain, "N/A", np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
                 else:
                     model_name = "N/A"
                     if(pretrain):
