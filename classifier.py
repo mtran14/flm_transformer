@@ -190,7 +190,7 @@ for seed in seeds:
                                 for modal in sources:
                                     options['ckpt_file'] = model_name_dict[modal]
                                     current_transformer = TRANSFORMER(options=options, inp_dim=0).to(device)
-                                    current_transformer.train()
+                                    current_transformer.eval()
                                     models_dict[modal] = current_transformer                                
                                 
                                 # setup your downstream class model
@@ -199,8 +199,8 @@ for seed in seeds:
                                 classifier.train()
                                 # construct the optimizer
                                 param_list = []
-                                for modal in sources:
-                                    param_list += list(models_dict[modal].parameters())
+                                #for modal in sources:
+                                    #param_list += list(models_dict[modal].parameters())
                                 param_list += list(classifier.parameters())
                                 optimizer = torch.optim.AdamW(param_list, lr=3e-4)
                                     
@@ -351,9 +351,9 @@ for seed in seeds:
                                                     label_all_test += label_m                                                
                                                 
                                         classifier.train()
-                                        if(pretrain):
-                                            for modal in sources:
-                                                models_dict[modal].train()  
+                                        #if(pretrain):
+                                            #for modal in sources:
+                                                #models_dict[modal].train()  
                                                 
                                         test_acc = accuracy_score(label_all_test, pred_all_test)
                                         test_f1 = f1_score(label_all_test, pred_all_test)                                        
@@ -368,7 +368,7 @@ for seed in seeds:
                             fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
                             print("Fold Acc: ", fold_test_acc)
                             overall_f.append(fold_test_acc)                            
-                        print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f, axis=0))
+                        print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", np.mean(overall_f, axis=0))
                         output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
                 else:
                     model_name = "N/A"
