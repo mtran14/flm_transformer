@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
-from audtorch.metrics.functional import concordance_cc
+#from audtorch.metrics.functional import concordance_cc
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 ###########################
@@ -588,14 +588,22 @@ class dummy_upstream(nn.Module):
 class example_classifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
         super(example_classifier, self).__init__()
-        self.rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=1, dropout=0.3,
+        self.rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=2, dropout=0.1,
                           batch_first=True, bidirectional=False)
-
+        
         self.out = nn.Linear(hidden_dim, class_num)
         self.out_fn = nn.LogSoftmax(dim=-1)
         self.criterion = nn.CrossEntropyLoss()
+        
+    def statistic(self, probabilities, labels):
+        assert(len(probabilities.shape) > 1)
+        assert(probabilities.unbind(dim=-1)[0].shape == labels.shape)
 
-    def forward(self, features, labels):
+        valid_count = torch.LongTensor([len(labels)])
+        correct_count = ((probabilities.argmax(dim=-1) == labels).type(torch.LongTensor)).sum()
+        return correct_count, valid_count    
+
+    def forward(self, features, labels, valid_length=None):
         # features: (batch_size, seq_len, feature)
         # labels: (batch_size,), one utterance to one label
 
@@ -604,5 +612,5 @@ class example_classifier(nn.Module):
         logits = self.out(hidden)
         result = self.out_fn(logits)
         loss = self.criterion(result, labels)
-
-        return loss, result
+        correct, valid = self.statistic(logits, labels)
+        return loss, result, correct, valid

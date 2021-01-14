@@ -64,6 +64,7 @@ def reverse_pred(input_list):
             output_list.append(1)
         else:
             output_list.append(0)
+    return output_list
 
 
 #subsets = ["watch", "describe", "feel"]
@@ -88,7 +89,7 @@ model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
 
 seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
-pretrain_option = [False,True]
+pretrain_option = [True,False]
 sources = ["au", "gp"]
 
 output = []
@@ -144,7 +145,7 @@ for seed in seeds:
                         bs = 12
                         val_every = 40
                         
-                        epochs = 10
+                        epochs = 15
                         
                         overall_w = []
                         overall_f = []
@@ -193,7 +194,8 @@ for seed in seeds:
                                     models_dict[modal] = current_transformer                                
                                 
                                 # setup your downstream class model
-                                classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                                #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                                classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
                                 classifier.train()
                                 # construct the optimizer
                                 param_list = []
@@ -249,6 +251,8 @@ for seed in seeds:
                                                 models_dict[modal].eval()                                        
                                         fold_acc_window = []
                                         #fold_acc_file = {}
+                                        pred_all_dev = []
+                                        label_all_dev = []                                         
                                         with torch.no_grad():
                                             for _, batch in enumerate(dev_loader):
                                                 batch_data, batch_labels, file_names = batch
@@ -279,8 +283,20 @@ for seed in seeds:
                                                 batch_labels = batch_labels.detach().cpu().numpy()
                                                 batch_acc = accuracy_score(batch_labels, preds)
                                                 fold_acc_window.append(correct.item()/valid.item())
+                                                
+                                                predictions_v = list(result.argmax(dim=-1).detach().cpu().numpy())
+                                                predictions_v_m = predictions_v
+                                                label_v_m = list(batch_labels)
+    
+                                                if(len(predictions_v_m) == len(label_v_m)):
+                                                    pred_all_dev += predictions_v_m
+                                                    label_all_dev += label_v_m   
+                                                    
+                                        
                                              
-                                        val_acc = np.mean(fold_acc_window)
+                                        val_acc = accuracy_score(label_all_dev, pred_all_dev)
+                                        val_f1 = f1_score(label_all_dev, pred_all_dev)  
+                                        
                                         test_files_name = table_name[test_index][:,0]
                                         test_labels = []
                                         test_files = filter_files(test_files_name, table[:,0], drugCond=drugcond)
@@ -296,6 +312,9 @@ for seed in seeds:
                                         
                                         fold_acc_window_test = []
                                         fold_acc_file_test = {}
+                                        
+                                        pred_all_test = []
+                                        label_all_test = []                                        
                                         with torch.no_grad():
                                             for _, batch in enumerate(test_loader):
                                                 batch_data, batch_labels, file_names = batch
@@ -323,21 +342,34 @@ for seed in seeds:
                                                 batch_acc = correct.item()/valid.item() if val_acc > 0.35 else 1-correct.item()/valid.item()
                                                 fold_acc_window_test.append(batch_acc)
                                                 
+                                                predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
+                                                predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
+                                                label_m = list(batch_labels.detach().cpu().numpy())
+                                                print(predictions_m, label_m)
+                                                if(len(predictions_m) == len(label_m)):
+                                                    pred_all_test += predictions_m
+                                                    label_all_test += label_m                                                
+                                                
                                         classifier.train()
                                         if(pretrain):
                                             for modal in sources:
-                                                models_dict[modal].train()                                         
-                                        print("Dev: ", np.mean(fold_acc_window), "Test: ", np.mean(fold_acc_window_test), \
+                                                models_dict[modal].train()  
+                                                
+                                        test_acc = accuracy_score(label_all_test, pred_all_test)
+                                        test_f1 = f1_score(label_all_test, pred_all_test)                                        
+                                        print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                        if(np.mean(fold_acc_window) > 0.35):
-                                            fold_dev_test_acc[np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+                                        
+                                        if(val_acc > 0.35):
+                                            fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                         else:
-                                            fold_dev_test_acc[1-np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+                                            fold_dev_test_acc[1-val_acc + 1-val_f1] = [test_acc, test_f1]
+                                            
                             fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
                             print("Fold Acc: ", fold_test_acc)
-                            overall_f.append(fold_test_acc)
-                        print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f))
-                        output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f)])
+                            overall_f.append(fold_test_acc)                            
+                        print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f, axis=0))
+                        output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
                 else:
                     model_name = "N/A"
                     if(pretrain):
@@ -385,7 +417,7 @@ for seed in seeds:
                     bs = 12
                     val_every = 40
                     
-                    epochs = 10
+                    epochs = 15
                     
                     overall_w = []
                     overall_f = []
@@ -446,8 +478,8 @@ for seed in seeds:
                         ###########################
                         else:
                             #init model and optimizer
-                            #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                            classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                            classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
+                            #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
                             optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                             classifier.train()                        
                         ###########################
@@ -472,7 +504,17 @@ for seed in seeds:
                                     if(len(sources) == 1):
                                         batch_data = batch_data[sources[0]].to(device)
                                     else:
-                                        batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                               
+                                        batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)
+                                    
+                                    batch_norm_data = torch.zeros(batch_data.size())
+                                    for x in range(batch_data.shape[0]):
+                                        current_norm = batch_data[x]
+                                        current_mean = current_norm.mean()
+                                        current_std = current_norm.std()
+                                        current_data_n = (current_norm - current_mean) / current_std
+                                        batch_norm_data[x] = current_data_n
+                                    batch_data = batch_norm_data
+                                                                      
                                 
                                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                 valid_lengths = label_mask.sum(dim=1)        
@@ -490,6 +532,8 @@ for seed in seeds:
                                             models_dict[modal].eval()                                    
                                     fold_acc_window = []
                                     #fold_acc_file = {}
+                                    pred_all_dev = []
+                                    label_all_dev = []                                    
                                     with torch.no_grad():
                                         for _, batch in enumerate(dev_loader):
                                             batch_data, batch_labels, file_names = batch
@@ -509,7 +553,16 @@ for seed in seeds:
                                                 if(len(sources) == 1):
                                                     batch_data = batch_data[sources[0]].to(device)
                                                 else:
-                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                                                         
+                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)   
+                                                
+                                                batch_norm_data = torch.zeros(batch_data.size())
+                                                for x in range(batch_data.shape[0]):
+                                                    current_norm = batch_data[x]
+                                                    current_mean = current_norm.mean()
+                                                    current_std = current_norm.std()
+                                                    current_data_n = (current_norm - current_mean) / current_std
+                                                    batch_norm_data[x] = current_data_n
+                                                batch_data = batch_norm_data                                                
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)          
@@ -520,8 +573,19 @@ for seed in seeds:
                                             batch_labels = batch_labels.detach().cpu().numpy()
                                             batch_acc = accuracy_score(batch_labels, preds)
                                             fold_acc_window.append(correct.item()/valid.item())
+                                            
+                                            predictions_v = list(result.argmax(dim=-1).detach().cpu().numpy())
+                                            predictions_v_m = predictions_v
+                                            label_v_m = list(batch_labels)
+
+                                            if(len(predictions_v_m) == len(label_v_m)):
+                                                pred_all_dev += predictions_v_m
+                                                label_all_dev += label_v_m                                            
+                                            
                                          
-                                    val_acc = np.mean(fold_acc_window)
+                                    val_acc = accuracy_score(label_all_dev, pred_all_dev)
+                                    val_f1 = f1_score(label_all_dev, pred_all_dev)
+                                    
                                     test_files_name = table_name[test_index][:,0]
                                     test_labels = []
                                     test_files = filter_files(test_files_name, table[:,0], drugCond=drugcond)
@@ -559,7 +623,16 @@ for seed in seeds:
                                                 if(len(sources) == 1):
                                                     batch_data = batch_data[sources[0]].to(device)
                                                 else:
-                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)                                                                                  
+                                                    batch_data = torch.cat([batch_data[x] for x in sources], dim=-1).to(device)  
+                                                
+                                                batch_norm_data = torch.zeros(batch_data.size())
+                                                for x in range(batch_data.shape[0]):
+                                                    current_norm = batch_data[x]
+                                                    current_mean = current_norm.mean()
+                                                    current_std = current_norm.std()
+                                                    current_data_n = (current_norm - current_mean) / current_std
+                                                    batch_norm_data[x] = current_data_n
+                                                batch_data = batch_norm_data                                                
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)  
@@ -570,7 +643,7 @@ for seed in seeds:
                                             predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
                                             predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
                                             label_m = list(batch_labels.detach().cpu().numpy())
-                                            print(predictions_m, label_m)
+                                            #print(predictions_m, label_m)
                                             if(len(predictions_m) == len(label_m)):
                                                 pred_all_test += predictions_m
                                                 label_all_test += label_m
@@ -578,18 +651,20 @@ for seed in seeds:
                                     classifier.train()
                                     if(pretrain):
                                         for modal in sources:
-                                            models_dict[modal].train()                                    
-                                    print("Dev: ", np.mean(fold_acc_window), "Test: ", accuracy_score(label_all_test, pred_all_test), f1_score(label_all_test, pred_all_test), \
+                                            models_dict[modal].train()  
+                                    test_acc = accuracy_score(label_all_test, pred_all_test)
+                                    test_f1 = f1_score(label_all_test, pred_all_test)
+                                    print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                    if(np.mean(fold_acc_window) > 0.35):
-                                        fold_dev_test_acc[np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+                                    if(val_acc > 0.35):
+                                        fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                     else:
-                                        fold_dev_test_acc[1-np.mean(fold_acc_window)] = np.mean(fold_acc_window_test)
+                                        fold_dev_test_acc[1-val_acc + 1-val_f1] = [test_acc, test_f1]
                         fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
                         print("Fold Acc: ", fold_test_acc)
                         overall_f.append(fold_test_acc)
-                    print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f))
-                    output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f)])
+                    print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f, axis=0))
+                    output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
                     
 pd.DataFrame(output).to_csv("multiple_seed_schz_clf_results_gpau.csv", header=None, index=False)
                             
