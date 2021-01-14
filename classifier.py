@@ -343,7 +343,8 @@ for seed in seeds:
                                                 fold_acc_window_test.append(batch_acc)
                                                 
                                                 predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
-                                                predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
+                                                #predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
+                                                predictions_m = predictions
                                                 label_m = list(batch_labels.detach().cpu().numpy())
                                                 #print(predictions_m, label_m)
                                                 if(len(predictions_m) == len(label_m)):
@@ -359,11 +360,11 @@ for seed in seeds:
                                         test_f1 = f1_score(label_all_test, pred_all_test)                                        
                                         print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                        
-                                        if(val_acc > 0.35):
-                                            fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
-                                        else:
-                                            fold_dev_test_acc[1-val_acc + 1-val_f1] = [test_acc, test_f1]
+                                        fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
+                                        #if(val_acc > 0.35):
+                                            #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
+                                        #else:
+                                            #fold_dev_test_acc[1-val_acc + 1-val_f1] = [test_acc, test_f1]
                                             
                             fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
                             print("Fold Acc: ", fold_test_acc)
@@ -376,7 +377,7 @@ for seed in seeds:
                         dim_dict = {"flm":272, "gp":88, "au":136}
                         inp_dim = sum([dim_dict[x] for x in sources])
                     else:
-                        dim_dict = {"flm":136, "gp":11, "au":17}
+                        dim_dict = {"flm":136, "gp":11, "au":17, "gpau":28}
                         inp_dim = sum([dim_dict[x] for x in sources])                        
                     
                     config = {
