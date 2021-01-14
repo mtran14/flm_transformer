@@ -563,7 +563,7 @@ for seed in seeds:
                                                     current_std = current_norm.std()
                                                     current_data_n = (current_norm - current_mean) / current_std
                                                     batch_norm_data[x] = current_data_n
-                                                batch_data = batch_norm_data                                               
+                                                batch_data = batch_norm_data.to(device)                                               
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)          
@@ -633,7 +633,7 @@ for seed in seeds:
                                                     current_std = current_norm.std()
                                                     current_data_n = (current_norm - current_mean) / current_std
                                                     batch_norm_data[x] = current_data_n
-                                                batch_data = batch_norm_data                                                
+                                                batch_data = batch_norm_data.to(device)                                                
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)  
