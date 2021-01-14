@@ -89,7 +89,7 @@ model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp,
 
 seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
-pretrain_option = [True,False]
+pretrain_option = [False,True]
 sources = ["gpau"]
 
 output = []
@@ -145,7 +145,7 @@ for seed in seeds:
                         bs = 12
                         val_every = 40
                         
-                        epochs = 15
+                        epochs = 40
                         
                         overall_w = []
                         overall_f = []
@@ -563,7 +563,7 @@ for seed in seeds:
                                                     current_std = current_norm.std()
                                                     current_data_n = (current_norm - current_mean) / current_std
                                                     batch_norm_data[x] = current_data_n
-                                                batch_data = batch_norm_data                                                
+                                                batch_data = batch_norm_data.to(device)                                                
                                                 
                                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                                             valid_lengths = label_mask.sum(dim=1)          
