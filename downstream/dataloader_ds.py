@@ -66,9 +66,11 @@ class SchizophreniaMMDataset(Dataset):
             facial_landmarks = current_data[:,1:137]
             gaze_pose = current_data[:,137:148]
             aus = current_data[:,148:165]
+            gpau = np.concatenate((aus, gaze_pose), axis=1)
             data_dict = {"flm":pad(facial_landmarks, max_len),\
                          "gp":pad(gaze_pose, max_len), \
-                         "au":pad(aus, max_len)}            
+                         "au":pad(aus, max_len),\
+                         "gpau":pad(gpau, max_len)}            
             self.X.append([data_dict, label, "pseudo-string"])
                 
     def __len__(self):

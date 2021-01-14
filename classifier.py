@@ -85,12 +85,12 @@ model_name_flm = "result/result_transformer/flm_base/states-250000.ckpt"
 model_name_au = "result/result_transformer/au_aalbert_3L/states-200000.ckpt"
 model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
 model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
-model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
+model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp, "gpau":model_name_gpau}
 
 seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
 pretrain_option = [True,False]
-sources = ["au", "gp"]
+sources = ["gpau"]
 
 output = []
 for seed in seeds:
@@ -101,7 +101,7 @@ for seed in seeds:
                     for i in range(1):
                         if(pretrain):
                             #dim_dict = {"flm":272, "gp":88, "au":136}
-                            dim_dict = {"flm":272, "gp":84, "au":120}
+                            dim_dict = {"flm":272, "gp":84, "au":120, "gpau":144}
                             inp_dim = sum([dim_dict[x] for x in sources])
                         else:
                             dim_dict = {"flm":136, "gp":11, "au":17}
@@ -345,7 +345,7 @@ for seed in seeds:
                                                 predictions = list(result.argmax(dim=-1).detach().cpu().numpy())
                                                 predictions_m = reverse_pred(predictions) if val_acc <= 0.35 else predictions
                                                 label_m = list(batch_labels.detach().cpu().numpy())
-                                                print(predictions_m, label_m)
+                                                #print(predictions_m, label_m)
                                                 if(len(predictions_m) == len(label_m)):
                                                     pred_all_test += predictions_m
                                                     label_all_test += label_m                                                
