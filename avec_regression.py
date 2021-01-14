@@ -338,8 +338,8 @@ for seed in seeds:
                             pass
             chosen_stats = dev_test_scores[min(dev_test_scores)]
             chosen_dev_scores = dev_score_break_down[min(dev_test_scores)]
-            print("BEST PERFORMING SCORES: ", model_name, chosen_stats)
-            output.append([seed, model_name, chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1].item()])
+            print("BEST PERFORMING SCORES: ", pretrain_option, chosen_stats)
+            output.append([seed, pretrain_option, chosen_dev_scores[0], chosen_dev_scores[1], chosen_stats[0], chosen_stats[1].item()])
 
     pretrain_option = False
     if(not pretrain_option):
