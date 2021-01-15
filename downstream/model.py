@@ -618,7 +618,7 @@ class example_classifier(nn.Module):
     
 class example_regression(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
-        super(example_classifier, self).__init__()
+        super(example_regression, self).__init__()
         self.rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=2, dropout=0.1,
                           batch_first=True, bidirectional=False)
         self.out = nn.Linear(hidden_dim, 1)
