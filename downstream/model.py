@@ -624,13 +624,10 @@ class example_DNN(nn.Module):
         self.network = nn.Sequential(
             nn.Linear(input_dim, layers[0]),
             nn.ReLU(),
-            nn.BatchNorm1d(layers[0]),
             nn.Linear(layers[0], layers[1]),
             nn.ReLU(),
-            nn.BatchNorm1d(layers[1]),
             nn.Linear(layers[1], layers[2]),
-            nn.ReLU(),
-            nn.BatchNorm1d(layers[2])
+            nn.ReLU()
         )
         
         self.out = nn.Linear(hidden_dim, class_num)
