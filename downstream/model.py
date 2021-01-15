@@ -622,7 +622,7 @@ class example_DNN(nn.Module):
         super(example_DNN, self).__init__()
         layers = [64,32,10]
         self.network = nn.Sequential(
-            nn.Linear(input_dim, layers[0]),
+            nn.Linear(input_dim*100, layers[0]),
             nn.ReLU(),
             nn.Linear(layers[0], layers[1]),
             nn.ReLU(),
@@ -645,7 +645,7 @@ class example_DNN(nn.Module):
     def forward(self, features, labels, valid_length=None):
         # features: (batch_size, seq_len, feature)
         # labels: (batch_size,), one utterance to one label
-
+        features = features.view(features.shape[0],features.shape[1]*features.shape[2])
         hidden = self.network(features)
         logits = self.out(hidden)
         result = self.out_fn(logits)
