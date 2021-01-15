@@ -457,7 +457,7 @@ for seed in seeds:
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
                     #dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))  
-                    dev_ccc = pearsonr(true_by_id, np.array(pred_by_id_val))[0]
+                    dev_ccc = pearsonr(true_by_id_val, np.array(pred_by_id_val))[0]
                     dev_score = -abs(dev_ccc) + dev_rmse/100
                     dev_score_break_down[dev_score] = [dev_ccc, dev_rmse]
                     
