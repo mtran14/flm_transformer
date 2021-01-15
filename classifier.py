@@ -1,6 +1,6 @@
 import torch
 from transformer.nn_transformer import TRANSFORMER
-from downstream.model import example_classifier, RnnClassifier, FeedForwardClassifier
+from downstream.model import example_classifier, RnnClassifier, FeedForwardClassifier, example_DNN
 from downstream.solver import get_optimizer
 from downstream.dataloader_ds import SchizophreniaMMDataset
 import pandas as pd
@@ -195,7 +195,7 @@ for seed in seeds:
                                 
                                 # setup your downstream class model
                                 #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
-                                classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
+                                classifier = example_DNN(inp_dim, hidden_dim=32, class_num=2).to(device)
                                 classifier.train()
                                 # construct the optimizer
                                 param_list = []
@@ -208,7 +208,7 @@ for seed in seeds:
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                                classifier = RnnClassifier(136, 2, config, seed).to(device)
+                                classifier = example_DNN(136, 2, config, seed).to(device)
                                 optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                                 classifier.train()
                             ###########################
@@ -481,7 +481,7 @@ for seed in seeds:
                         ###########################
                         else:
                             #init model and optimizer
-                            classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
+                            classifier = example_DNN(inp_dim, hidden_dim=32, class_num=2).to(device)
                             #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
                             optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                             classifier.train()                        

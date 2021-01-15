@@ -616,6 +616,43 @@ class example_classifier(nn.Module):
         correct, valid = self.statistic(logits, labels)
         return loss, result, correct, valid
     
+    
+class example_DNN(nn.Module):
+    def __init__(self, input_dim, hidden_dim, class_num):
+        super(example_classifier, self).__init__()
+        layers = [64,32,10]
+        self.network = nn.Sequential(
+            nn.Linear(input_dim, layers[0]),
+            nn.ReLU(),
+            nn.Linear(layers[0], layers[1]),
+            nn.ReLU(),
+            nn.Linear(layers[1], layers[2]),
+            nn.ReLU()
+        )
+        
+        self.out = nn.Linear(hidden_dim, class_num)
+        self.out_fn = nn.LogSoftmax(dim=-1)
+        self.criterion = nn.CrossEntropyLoss()
+        
+    def statistic(self, probabilities, labels):
+        assert(len(probabilities.shape) > 1)
+        assert(probabilities.unbind(dim=-1)[0].shape == labels.shape)
+
+        valid_count = torch.LongTensor([len(labels)])
+        correct_count = ((probabilities.argmax(dim=-1) == labels).type(torch.LongTensor)).sum()
+        return correct_count, valid_count    
+
+    def forward(self, features, labels, valid_length=None):
+        # features: (batch_size, seq_len, feature)
+        # labels: (batch_size,), one utterance to one label
+
+        hidden = self.network(features)
+        logits = self.out(hidden)
+        result = self.out_fn(logits)
+        loss = self.criterion(result, labels)
+        correct, valid = self.statistic(logits, labels)
+        return loss, result, correct, valid
+    
 class example_regression(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
         super(example_regression, self).__init__()
