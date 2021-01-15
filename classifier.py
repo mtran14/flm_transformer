@@ -202,14 +202,14 @@ for seed in seeds:
                                 #for modal in sources:
                                     #param_list += list(models_dict[modal].parameters())
                                 param_list += list(classifier.parameters())
-                                optimizer = torch.optim.AdamW(param_list, lr=3e-4)
+                                optimizer = torch.optim.Adam(param_list, lr=4e-3)
                                     
                             ###########################
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
                                 classifier = RnnClassifier(136, 2, config, seed).to(device)
-                                optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
+                                optimizer = torch.optim.Adam(list(classifier.parameters()), lr=3e-4)    
                                 classifier.train()
                             ###########################
                                 
@@ -483,7 +483,7 @@ for seed in seeds:
                             #init model and optimizer
                             classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
                             #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
-                            optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
+                            optimizer = torch.optim.Adam(list(classifier.parameters()), lr=4e-3)    
                             classifier.train()                        
                         ###########################
                             
