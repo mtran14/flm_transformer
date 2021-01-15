@@ -125,9 +125,11 @@ class AvecDatasetFull(Dataset):
             facial_landmarks = current_data[:,0:136]
             gaze_pose = current_data[:,136:147]
             aus = current_data[:,147:164]
+            gpau = np.concatenate((aus, gaze_pose), axis=1)
             data_dict = {"flm":pad(facial_landmarks,max_len),\
                          "gp":pad(gaze_pose,max_len), \
-                         "au":pad(aus,max_len)}                
+                         "au":pad(aus,max_len), \
+                         "gpau":pad(gpau, max_len)}                
             self.X.append([data_dict, current_score, participant_id]) 
                 
     def __len__(self):

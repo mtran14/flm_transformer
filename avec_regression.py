@@ -59,14 +59,14 @@ def concordance_correlation_coefficient(y_true, y_pred,
     return numerator/denominator
 
 output = []
-subset = ["gp", "au"]
+subset = ["gpau"]
 model_name_flm = "result/result_transformer/flm_base/states-250000.ckpt"
 #model_name_au = "result/result_transformer/au_base/states-250000.ckpt"
 #model_name_gp = "result/result_transformer/gp_base/states-250000.ckpt"
 model_name_au = "result/result_transformer/au_aalbert_3L/states-200000.ckpt"
 model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
 model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
-model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp}
+model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp, "gpau":model_name_gpau}
 
 for seed in seeds:
     torch.manual_seed(seed)
@@ -126,7 +126,7 @@ for seed in seeds:
             dev_score_break_down = {}
             if(pretrain_option):
                 #dim_dict = {"flm":272, "gp":88, "au":136}
-                dim_dict = {"flm":272, "gp":84, "au":120}
+                dim_dict ={"flm":272, "gp":84, "au":120, "gpau":144}
                 inp_dim = sum([dim_dict[x] for x in subset])
             else:
                 dim_dict = {"flm":136, "gp":11, "au":17}
@@ -157,7 +157,7 @@ for seed in seeds:
             for modal in subset:
                 options['ckpt_file'] = model_name_dict[modal]
                 current_transformer = TRANSFORMER(options=options, inp_dim=0).to(device)
-                current_transformer.train()
+                current_transformer.eval()
                 models_dict[modal] = current_transformer            
             
             
@@ -165,8 +165,8 @@ for seed in seeds:
             classifier = AvecModel(inp_dim, 1, config, seed).to(device)
             classifier.train()
             param_list = []
-            for modal in subset:
-                param_list += list(models_dict[modal].parameters())
+            #for modal in subset:
+                #param_list += list(models_dict[modal].parameters())
             param_list += list(classifier.parameters())
             optimizer = torch.optim.AdamW(param_list, lr=3e-4)
             
@@ -208,9 +208,9 @@ for seed in seeds:
                     current_step = e * num_step_per_epochs + k
                     if(current_step % eval_every == 0):      
                         classifier.eval()
-                        if(pretrain_option):
-                            for modal in subset:
-                                models_dict[modal].eval()
+                        #if(pretrain_option):
+                            #for modal in subset:
+                                #models_dict[modal].eval()
                                 
                         fold_preds = []
                         fold_true = []
@@ -330,9 +330,9 @@ for seed in seeds:
                             dev_test_scores[dev_score] = [test_rmse, test_ccc]
                             train_losses = []
                             classifier.train()
-                            if(pretrain_option):
-                                for modal in subset:
-                                    models_dict[modal].train()                              
+                            #if(pretrain_option):
+                                #for modal in subset:
+                                    #models_dict[modal].train()                              
                         except:
                             train_losses = []
                             pass
