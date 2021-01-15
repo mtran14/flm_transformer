@@ -473,10 +473,10 @@ class AvecModel(nn.Module):
         
         if(self.mode == "regression"):
             for layer in self.pre_linears:
-                init.uniform(layer.weight, -10, 10)
+                init.uniform(layer.weight, -1, 1)
                 
             for layer in self.post_linears:
-                init.uniform(layer.weight, -20, 20)
+                init.uniform(layer.weight, -1, 1)
                 
             for p in self.local_rnn.parameters():
                 if(p.dim() > 1):

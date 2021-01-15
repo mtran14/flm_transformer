@@ -31,7 +31,7 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #labels = torch.randn(8)
 #loss, result, correct, valid = classifier.forward(features, labels)
 
-seeds = list(np.random.randint(0,1000,20))
+seeds = list(np.random.randint(0,1000,3))
 def get_path(participant_ids, processed_path):
     output = []
     for participant_id in participant_ids:
@@ -92,9 +92,9 @@ for seed in seeds:
     test_scores = pd.read_csv(test_info).values[:,regression_col]
     
     if(norm_label):    
-        train_scores = (np.array(train_scores) - 13.5)/27
-        dev_scores = (np.array(dev_scores) - 13.5)/27
-        test_scores = (np.array(test_scores) - 13.5)/27
+        train_scores = (np.array(train_scores))/27
+        dev_scores = (np.array(dev_scores))/27
+        test_scores = (np.array(test_scores))/27
     
     
     train_dataset = AvecDatasetFull(train_paths, list(train_scores), max_len=max_len)
@@ -119,7 +119,7 @@ for seed in seeds:
     
     
     epochs = n_steps//len(train_loader)
-    pretrain_option = False
+    pretrain_option = True
     
     if(pretrain_option):
         for i in range(1):
@@ -362,8 +362,8 @@ for seed in seeds:
             inp_dim = sum([dim_dict[x] for x in subset])
             
         # setup your downstream class model
-        #classifier = AvecModel(inp_dim, 1, config, seed).to(device)
-        classifier = example_regression(inp_dim, 32, 1).to(device)
+        classifier = AvecModel(inp_dim, 1, config, seed).to(device)
+        #classifier = example_regression(inp_dim, 32, 1).to(device)
         classifier.train()
         # construct the optimizer
         params = list(list(classifier.named_parameters()))
@@ -475,8 +475,8 @@ for seed in seeds:
                         pred_by_id_val.append(pred_score)
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
-                    #dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))  
-                    dev_ccc = pearsonr(true_by_id_val, np.array(pred_by_id_val))[0]
+                    dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))  
+                    #dev_ccc = pearsonr(true_by_id_val, np.array(pred_by_id_val))[0]
                     dev_score = -abs(dev_ccc) + dev_rmse/100
                     dev_score_break_down[dev_score] = [dev_ccc, dev_rmse]
                     
@@ -544,8 +544,8 @@ for seed in seeds:
                     try:
     
                         test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
-                        #test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
-                        test_ccc = pearsonr(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))[0]
+                        test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
+                        #test_ccc = pearsonr(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))[0]
                         print("Step ", current_step, "Dev MSE: ", dev_score, \
                                   "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
                         dev_test_scores[dev_score] = [test_rmse, test_ccc]
