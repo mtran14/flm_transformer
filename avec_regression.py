@@ -118,7 +118,7 @@ for seed in seeds:
     
     
     epochs = n_steps//len(train_loader)
-    pretrain_option = True
+    pretrain_option = False
     
     if(pretrain_option):
         for i in range(1):
@@ -357,7 +357,7 @@ for seed in seeds:
             dim_dict = {"flm":272, "gp":88, "au":136}
             inp_dim = sum([dim_dict[x] for x in subset])
         else:
-            dim_dict = {"flm":136, "gp":11, "au":17}
+            dim_dict = {"flm":136, "gp":11, "au":17, "gpau":28}
             inp_dim = sum([dim_dict[x] for x in subset])
             
         # setup your downstream class model
