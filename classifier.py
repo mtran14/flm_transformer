@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader
 import re
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import torch.nn as nn
@@ -87,7 +87,7 @@ model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
 model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp, "gpau":model_name_gpau}
 
-seeds = list(np.random.randint(0,1000,5))
+seeds = list(np.random.randint(0,1000,20))
 drugconds = ["PL","OT"]
 pretrain_option = [True,False]
 sources = ["gpau"]
@@ -357,10 +357,12 @@ for seed in seeds:
                                                 #models_dict[modal].train()  
                                                 
                                         test_acc = accuracy_score(label_all_test, pred_all_test)
-                                        test_f1 = f1_score(label_all_test, pred_all_test)                                        
+                                        test_f1 = f1_score(label_all_test, pred_all_test)    
+                                        test_precision = precision_score(label_all_test, pred_all_test)
+                                        test_recall = recall_score(label_all_test, pred_all_test)
                                         print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                        fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
+                                        fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1, test_precision, test_recall]
                                         #if(val_acc > 0.35):
                                             #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                         #else:
@@ -370,7 +372,7 @@ for seed in seeds:
                             print("Fold Acc: ", fold_test_acc)
                             overall_f.append(fold_test_acc)                            
                         print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", np.mean(overall_f, axis=0))
-                        output.append([seed, subset, drugcond, pretrain, "N/A", np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
+                        output.append([seed, subset, drugcond, pretrain, "N/A", np.mean(overall_f, axis=0)])
                 else:
                     model_name = "N/A"
                     if(pretrain):
@@ -655,9 +657,11 @@ for seed in seeds:
                                             models_dict[modal].train()  
                                     test_acc = accuracy_score(label_all_test, pred_all_test)
                                     test_f1 = f1_score(label_all_test, pred_all_test)
+                                    test_precision = precision_score(label_all_test, pred_all_test)
+                                    test_recall = recall_score(label_all_test, pred_all_test)                                    
                                     print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                    fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
+                                    fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1, test_precision, test_recall]
                                     #if(val_acc > 0.35):
                                         #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                     #else:
@@ -666,7 +670,7 @@ for seed in seeds:
                         print("Fold Acc: ", fold_test_acc)
                         overall_f.append(fold_test_acc)
                     print(seed, subset, drugcond, pretrain, model_name, "CV Test ACC: ", np.mean(overall_f, axis=0))
-                    output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)[0], np.mean(overall_f, axis=0)[1]])
+                    output.append([seed, subset, drugcond, pretrain, model_name, np.mean(overall_f, axis=0)])
                     
 pd.DataFrame(output).to_csv("multiple_seed_schz_clf_results_gpau.csv", header=None, index=False)
                             

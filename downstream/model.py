@@ -590,7 +590,7 @@ class example_classifier(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
         super(example_classifier, self).__init__()
         self.rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=2, dropout=0.1,
-                          batch_first=True, bidirectional=False)
+                          batch_first=True, bidirectional=True)
         
         self.out = nn.Linear(hidden_dim, class_num)
         self.out_fn = nn.LogSoftmax(dim=-1)
