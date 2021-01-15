@@ -620,14 +620,16 @@ class example_classifier(nn.Module):
 class example_DNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
         super(example_DNN, self).__init__()
-        layers = [64,32,10]
+        layers = [64,64,64,16]
         self.network = nn.Sequential(
             nn.Linear(input_dim*100, layers[0]),
             nn.ReLU(),
             nn.Linear(layers[0], layers[1]),
             nn.ReLU(),
             nn.Linear(layers[1], layers[2]),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Linear(layers[2], layers[3]),
+            nn.ReLU()            
         )
         
         self.out = nn.Linear(layers[-1], class_num)
