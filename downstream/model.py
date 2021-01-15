@@ -14,7 +14,7 @@ import torch
 from torch import nn
 from torch.nn.utils.rnn import pack_padded_sequence
 from torch.nn import init
-#from audtorch.metrics.functional import concordance_cc
+from audtorch.metrics.functional import concordance_cc
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 ###########################
@@ -536,10 +536,10 @@ class AvecModel(nn.Module):
         hidden = h_n[-1, :, :] #batch_size x hidden_size        
             
         
-        for linear in self.post_linears:
-            hidden = linear(hidden)
-            hidden = self.act_fn(hidden)
-            hidden = self.dropout(hidden)
+        #for linear in self.post_linears:
+            #hidden = linear(hidden)
+            #hidden = self.act_fn(hidden)
+            #hidden = self.dropout(hidden)
 
         logits = self.out(hidden)
 
