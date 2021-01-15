@@ -630,7 +630,7 @@ class example_DNN(nn.Module):
             nn.ReLU()
         )
         
-        self.out = nn.Linear(hidden_dim, class_num)
+        self.out = nn.Linear(layers[-1], class_num)
         self.out_fn = nn.LogSoftmax(dim=-1)
         self.criterion = nn.CrossEntropyLoss()
         
