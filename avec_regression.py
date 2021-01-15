@@ -510,6 +510,7 @@ for seed in seeds:
     
                     pred_by_id = np.array(pred_by_id, dtype=float)
                     true_by_id = np.array(true_by_id, dtype=float)
+                    print(pred_by_id, true_by_id)
                     try:
     
                         test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
