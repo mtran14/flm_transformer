@@ -1,6 +1,6 @@
 import torch
 from transformer.nn_transformer import TRANSFORMER
-from downstream.model import example_classifier, RnnClassifier, AvecModel
+from downstream.model import example_classifier, example_regression, AvecModel
 from downstream.solver import get_optimizer
 from downstream.dataloader_ds import AvecDataset, AvecDatasetFull
 import pandas as pd
@@ -362,7 +362,8 @@ for seed in seeds:
             inp_dim = sum([dim_dict[x] for x in subset])
             
         # setup your downstream class model
-        classifier = AvecModel(inp_dim, 1, config, seed).to(device)
+        #classifier = AvecModel(inp_dim, 1, config, seed).to(device)
+        classifier = example_regression(inp_dim, 32, 1).to(device)
         classifier.train()
         # construct the optimizer
         params = list(list(classifier.named_parameters()))
@@ -389,7 +390,16 @@ for seed in seeds:
                     if(len(subset) == 1):
                         batch_data = batch_data[subset[0]].to(device)
                     else:
-                        batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                 
+                        batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)
+                        
+                    batch_norm_data = torch.zeros(batch_data.size())
+                    for x in range(batch_data.shape[0]):
+                        current_norm = batch_data[x]
+                        current_mean = current_norm.mean()
+                        current_std = current_norm.std()
+                        current_data_n = (current_norm - current_mean) / current_std
+                        batch_norm_data[x] = current_data_n
+                    batch_data = batch_norm_data.to(device)                    
     
                 label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                 valid_lengths = label_mask.sum(dim=1)        
@@ -425,7 +435,16 @@ for seed in seeds:
                                 if(len(subset) == 1):
                                     batch_data = batch_data[subset[0]].to(device)
                                 else:
-                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                             
+                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)
+                                    
+                                batch_norm_data = torch.zeros(batch_data.size())
+                                for x in range(batch_data.shape[0]):
+                                    current_norm = batch_data[x]
+                                    current_mean = current_norm.mean()
+                                    current_std = current_norm.std()
+                                    current_data_n = (current_norm - current_mean) / current_std
+                                    batch_norm_data[x] = current_data_n
+                                batch_data = batch_norm_data.to(device)                                
     
                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                             valid_lengths = label_mask.sum(dim=1)          
@@ -484,7 +503,16 @@ for seed in seeds:
                                 if(len(subset) == 1):
                                     batch_data = batch_data[subset[0]].to(device)
                                 else:
-                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)                             
+                                    batch_data = torch.cat([batch_data[x] for x in subset], dim=-1).to(device)
+                                    
+                                batch_norm_data = torch.zeros(batch_data.size())
+                                for x in range(batch_data.shape[0]):
+                                    current_norm = batch_data[x]
+                                    current_mean = current_norm.mean()
+                                    current_std = current_norm.std()
+                                    current_data_n = (current_norm - current_mean) / current_std
+                                    batch_norm_data[x] = current_data_n
+                                batch_data = batch_norm_data.to(device)                                
     
                             label_mask = (batch_data.sum(dim=-1) != 0).type(torch.LongTensor).to(device=device, dtype=torch.long)
                             valid_lengths = label_mask.sum(dim=1)          
