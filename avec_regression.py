@@ -13,6 +13,7 @@ import os
 from sklearn.metrics import mean_squared_error
 from torch.nn import init
 from audtorch.metrics.functional import concordance_cc
+from scipy.stats import pearsonr
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -455,7 +456,8 @@ for seed in seeds:
                         pred_by_id_val.append(pred_score)
                         true_by_id_val.append(true_score)                    
                     dev_rmse = mean_squared_error(true_by_id_val, pred_by_id_val, squared=False)
-                    dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))                    
+                    #dev_ccc = concordance_correlation_coefficient(true_by_id_val, np.array(pred_by_id_val))  
+                    dev_ccc = pearsonr(true_by_id, np.array(pred_by_id_val))[0]
                     dev_score = -abs(dev_ccc) + dev_rmse/100
                     dev_score_break_down[dev_score] = [dev_ccc, dev_rmse]
                     
@@ -514,7 +516,8 @@ for seed in seeds:
                     try:
     
                         test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
-                        test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
+                        #test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
+                        test_ccc = pearsonr(true_by_id, np.array(pred_by_id_val))[0]
                         print("Step ", current_step, "Dev MSE: ", dev_score, \
                                   "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
                         dev_test_scores[dev_score] = [test_rmse, test_ccc]
