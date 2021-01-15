@@ -520,6 +520,7 @@ for seed in seeds:
                         dev_test_scores[dev_score] = [test_rmse, test_ccc]
                         classifier.train()
                     except:
+                        print("fail")
                         classifier.train()
                         pass    
          
