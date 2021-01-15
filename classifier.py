@@ -140,7 +140,7 @@ for seed in seeds:
                         
                         kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
                         n_step = 200
-                        n_val = 16
+                        n_val = 20
                         segment_size = 100
                         bs = 12
                         val_every = 40
@@ -415,7 +415,7 @@ for seed in seeds:
                     
                     kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
-                    n_val = 16
+                    n_val = 20
                     segment_size = 100
                     bs = 12
                     val_every = 40
