@@ -649,6 +649,7 @@ class example_DNN(nn.Module):
         hidden = self.network(features)
         logits = self.out(hidden)
         result = self.out_fn(logits)
+        print(logits.size(), result.size())
         loss = self.criterion(result, labels)
         correct, valid = self.statistic(logits, labels)
         return loss, result, correct, valid
