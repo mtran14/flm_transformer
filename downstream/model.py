@@ -619,15 +619,18 @@ class example_classifier(nn.Module):
     
 class example_DNN(nn.Module):
     def __init__(self, input_dim, hidden_dim, class_num):
-        super(example_classifier, self).__init__()
+        super(example_DNN, self).__init__()
         layers = [64,32,10]
         self.network = nn.Sequential(
             nn.Linear(input_dim, layers[0]),
             nn.ReLU(),
+            nn.BatchNorm1d(layers[0]),
             nn.Linear(layers[0], layers[1]),
             nn.ReLU(),
+            nn.BatchNorm1d(layers[1]),
             nn.Linear(layers[1], layers[2]),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.BatchNorm1d(layers[2])
         )
         
         self.out = nn.Linear(hidden_dim, class_num)
