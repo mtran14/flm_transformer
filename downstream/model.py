@@ -445,13 +445,14 @@ class AvecModel(nn.Module):
         self.local_rnn = None
         self.global_rnn = None
         if hidden_size > 0:
-            self.local_rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
+            self.local_rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_size, num_layers=2, dropout=dconfig['drop'],
                             batch_first=True, bidirectional=False)
             last_dim = hidden_size
-            self.global_rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=1, dropout=dconfig['drop'],
+            self.global_rnn = nn.GRU(input_size=last_dim, hidden_size=hidden_size, num_layers=2, dropout=dconfig['drop'],
                             batch_first=True, bidirectional=False)
             
-
+        
+        self.out = nn.Linear(hidden_size, 1)
         linears = []
         for linear_dim in self.config['post_linear_dims']:
             linears.append(nn.Linear(last_dim, linear_dim))
@@ -459,7 +460,7 @@ class AvecModel(nn.Module):
         self.post_linears = nn.ModuleList(linears)
 
         self.act_fn = torch.nn.functional.relu
-        self.out = nn.Linear(last_dim, class_num)
+        #self.out = nn.Linear(last_dim, class_num)
         
         self.mode = self.config['mode']
         if self.mode == 'classification':
@@ -512,10 +513,10 @@ class AvecModel(nn.Module):
         pre_linear_outputs = []
         for i in range(n_chunks):
             current_feature = subsequences[i]
-            for linear in self.pre_linears:
-                current_feature = linear(current_feature)
-                current_feature = self.act_fn(current_feature)
-                current_feature = self.dropout(current_feature)
+            #for linear in self.pre_linears:
+                #current_feature = linear(current_feature)
+                #current_feature = self.act_fn(current_feature)
+                #current_feature = self.dropout(current_feature)
             pre_linear_outputs.append(current_feature)
             
         output_local_rnn = torch.zeros(batch_size, global_length, self.config['hidden_size'])
@@ -614,3 +615,22 @@ class example_classifier(nn.Module):
         loss = self.criterion(result, labels)
         correct, valid = self.statistic(logits, labels)
         return loss, result, correct, valid
+    
+class example_regression(nn.Module):
+    def __init__(self, input_dim, hidden_dim, class_num):
+        super(example_classifier, self).__init__()
+        self.rnn = nn.GRU(input_size=input_dim, hidden_size=hidden_dim, num_layers=2, dropout=0.1,
+                          batch_first=True, bidirectional=False)
+        self.out = nn.Linear(hidden_dim, 1)
+        self.criterion = nn.MSELoss()
+
+    def forward(self, features, labels, valid_length=None):
+        # features: (batch_size, seq_len, feature)
+        # labels: (batch_size,), one utterance to one label
+
+        _, h_n = self.rnn(features)
+        hidden = h_n[-1, :, :]
+        result = self.out(hidden)
+        loss = self.criterion(result, labels)
+        correct, valid = torch.LongTensor([1]), torch.LongTensor([1])
+        return loss, result, correct, valid    
