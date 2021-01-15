@@ -87,7 +87,7 @@ model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
 model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp, "gpau":model_name_gpau}
 
-seeds = list(np.random.randint(0,1000,20))
+seeds = list(np.random.randint(0,1000,10))
 drugconds = ["PL","OT"]
 pretrain_option = [True,False]
 sources = ["gpau"]
@@ -140,7 +140,7 @@ for seed in seeds:
                         
                         kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
                         n_step = 200
-                        n_val = 20
+                        n_val = 16
                         segment_size = 100
                         bs = 12
                         val_every = 40
@@ -202,14 +202,14 @@ for seed in seeds:
                                 #for modal in sources:
                                     #param_list += list(models_dict[modal].parameters())
                                 param_list += list(classifier.parameters())
-                                optimizer = torch.optim.Adam(param_list, lr=4e-3)
+                                optimizer = torch.optim.AdamW(param_list, lr=3e-4)
                                     
                             ###########################
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
                                 classifier = RnnClassifier(136, 2, config, seed).to(device)
-                                optimizer = torch.optim.Adam(list(classifier.parameters()), lr=3e-4)    
+                                optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                                 classifier.train()
                             ###########################
                                 
@@ -415,7 +415,7 @@ for seed in seeds:
                     
                     kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
-                    n_val = 20
+                    n_val = 16
                     segment_size = 100
                     bs = 12
                     val_every = 40
@@ -483,7 +483,7 @@ for seed in seeds:
                             #init model and optimizer
                             classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
                             #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
-                            optimizer = torch.optim.Adam(list(classifier.parameters()), lr=4e-3)    
+                            optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                             classifier.train()                        
                         ###########################
                             
