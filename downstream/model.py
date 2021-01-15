@@ -633,4 +633,4 @@ class example_regression(nn.Module):
         result = self.out(hidden)
         loss = self.criterion(result, labels)
         correct, valid = torch.LongTensor([1]), torch.LongTensor([1])
-        return loss, result, correct, valid    
+        return loss, result.detach().cpu(), correct, valid    
