@@ -517,7 +517,7 @@ for seed in seeds:
     
                         test_rmse = mean_squared_error(true_by_id, pred_by_id, squared=False)
                         #test_ccc = concordance_cc(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))
-                        test_ccc = pearsonr(true_by_id, np.array(pred_by_id_val))[0]
+                        test_ccc = pearsonr(torch.from_numpy(true_by_id), torch.from_numpy(np.array(pred_by_id)))[0]
                         print("Step ", current_step, "Dev MSE: ", dev_score, \
                                   "Test RMSE: ", test_rmse, "Test CCC: ", test_ccc.item())
                         dev_test_scores[dev_score] = [test_rmse, test_ccc]
