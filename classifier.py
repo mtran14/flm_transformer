@@ -415,7 +415,7 @@ for seed in seeds:
                     
                     kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
-                    n_val = 16
+                    n_val = 2
                     segment_size = 100
                     bs = 12
                     val_every = 40
@@ -661,7 +661,7 @@ for seed in seeds:
                                     test_recall = recall_score(label_all_test, pred_all_test)                                    
                                     print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                    fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1, test_precision, test_recall]
+                                    fold_dev_test_acc[test_acc+test_f1] = [test_acc, test_f1, test_precision, test_recall]
                                     #if(val_acc > 0.35):
                                         #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                     #else:
