@@ -138,7 +138,7 @@ for seed in seeds:
                                 table_filter.append(row)
                         table = np.array(table_filter)
                         
-                        kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
+                        kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                         n_step = 200
                         n_val = 2
                         segment_size = 100
@@ -149,7 +149,7 @@ for seed in seeds:
                         
                         overall_w = []
                         overall_f = []
-                        for train_index, test_index in kf.split(table_name):
+                        for train_index, test_index in kf.split(table_name, table_label):
                             train_files_name = table_name[train_index[:-n_val]][:,0]
                             train_labels = []
                             train_files = filter_files(train_files_name, table[:,0], drugCond=drugcond)
@@ -413,7 +413,7 @@ for seed in seeds:
                             table_filter.append(row)
                     table = np.array(table_filter)                    
                     
-                    kf = KFold(n_splits=n_fold, shuffle=True, random_state=seed)
+                    kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
                     n_val = 16
                     segment_size = 100
@@ -424,7 +424,7 @@ for seed in seeds:
                     
                     overall_w = []
                     overall_f = []
-                    for train_index, test_index in kf.split(table_name):
+                    for train_index, test_index in kf.split(table_name, table_label):
                         train_files_name = table_name[train_index[:-n_val]][:,0]
                         train_labels = []
                         train_files = filter_files(train_files_name, table[:,0], drugCond=drugcond)
