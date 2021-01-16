@@ -7,7 +7,7 @@ import pandas as pd
 from sklearn.model_selection import KFold, StratifiedKFold
 from torch.utils.data import DataLoader
 import re
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 import numpy as np
 from sklearn.linear_model import LogisticRegression
 import torch.nn as nn
@@ -140,9 +140,9 @@ for seed in seeds:
                         
                         kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                         n_step = 200
-                        n_val = 2
+                        n_val = 16
                         segment_size = 100
-                        bs = 12
+                        bs = 8
                         val_every = 40
                         
                         epochs = 40
@@ -195,7 +195,7 @@ for seed in seeds:
                                 
                                 # setup your downstream class model
                                 #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
-                                classifier = example_DNN(inp_dim, hidden_dim=32, class_num=2).to(device)
+                                classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
                                 classifier.train()
                                 # construct the optimizer
                                 param_list = []
@@ -208,7 +208,7 @@ for seed in seeds:
                             else:
                                 #init model and optimizer
                                 #classifier = example_classifier(input_dim=136, hidden_dim=64, class_num=2).to(device)
-                                classifier = example_DNN(136, 2, config, seed).to(device)
+                                classifier = example_classifier(136, 2, config, seed).to(device)
                                 optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                                 classifier.train()
                             ###########################
@@ -296,6 +296,7 @@ for seed in seeds:
                                              
                                         val_acc = accuracy_score(label_all_dev, pred_all_dev)
                                         val_f1 = f1_score(label_all_dev, pred_all_dev)  
+                                        val_auc = roc_auc_score(label_all_dev, pred_all_dev)
                                         
                                         test_files_name = table_name[test_index][:,0]
                                         test_labels = []
@@ -360,9 +361,10 @@ for seed in seeds:
                                         test_f1 = f1_score(label_all_test, pred_all_test)    
                                         test_precision = precision_score(label_all_test, pred_all_test)
                                         test_recall = recall_score(label_all_test, pred_all_test)
-                                        print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
+                                        test_auc = roc_auc_score(label_all_test, pred_all_test)
+                                        print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test AUC ", test_auc, \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                        fold_dev_test_acc[test_acc+test_f1] = [test_acc, test_f1, test_precision, test_recall]
+                                        fold_dev_test_acc[val_auc] = [test_acc, test_f1, test_precision, test_recall, test_auc]
                                         #if(val_acc > 0.35):
                                             #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                         #else:
@@ -415,9 +417,9 @@ for seed in seeds:
                     
                     kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
                     n_step = 200
-                    n_val = 2
+                    n_val = 16
                     segment_size = 100
-                    bs = 12
+                    bs = 8
                     val_every = 40
                     
                     epochs = 40
@@ -469,7 +471,7 @@ for seed in seeds:
                                 models_dict[modal] = current_transformer                                
                             
                             # setup your downstream class model
-                            classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
+                            classifier = example_classifier(inp_dim, 2, config, seed).to(device)
                             classifier.train()
                             # construct the optimizer
                             param_list = []
@@ -481,7 +483,7 @@ for seed in seeds:
                         ###########################
                         else:
                             #init model and optimizer
-                            classifier = example_DNN(inp_dim, hidden_dim=32, class_num=2).to(device)
+                            classifier = example_classifier(inp_dim, hidden_dim=32, class_num=2).to(device)
                             #classifier = RnnClassifier(inp_dim, 2, config, seed).to(device)
                             optimizer = torch.optim.AdamW(list(classifier.parameters()), lr=3e-4)    
                             classifier.train()                        
@@ -588,6 +590,7 @@ for seed in seeds:
                                          
                                     val_acc = accuracy_score(label_all_dev, pred_all_dev)
                                     val_f1 = f1_score(label_all_dev, pred_all_dev)
+                                    val_auc = roc_auc_score(label_all_dev, pred_all_dev)
                                     
                                     test_files_name = table_name[test_index][:,0]
                                     test_labels = []
@@ -658,10 +661,11 @@ for seed in seeds:
                                     test_acc = accuracy_score(label_all_test, pred_all_test)
                                     test_f1 = f1_score(label_all_test, pred_all_test)
                                     test_precision = precision_score(label_all_test, pred_all_test)
-                                    test_recall = recall_score(label_all_test, pred_all_test)                                    
-                                    print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test F1 ", test_f1, \
+                                    test_recall = recall_score(label_all_test, pred_all_test)  
+                                    test_auc = roc_auc_score(label_all_test, pred_all_test)
+                                    print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test AUC ", test_auc, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                    fold_dev_test_acc[test_acc+test_f1] = [test_acc, test_f1, test_precision, test_recall]
+                                    fold_dev_test_acc[test_acc+test_f1] = [test_acc, test_f1, test_precision, test_recall, test_auc]
                                     #if(val_acc > 0.35):
                                         #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                     #else:
