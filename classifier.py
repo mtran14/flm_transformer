@@ -665,7 +665,7 @@ for seed in seeds:
                                     test_auc = roc_auc_score(label_all_test, pred_all_test)
                                     print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test AUC ", test_auc, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
-                                    fold_dev_test_acc[test_acc+test_f1] = [test_acc, test_f1, test_precision, test_recall, test_auc]
+                                    fold_dev_test_acc[val_auc] = [test_acc, test_f1, test_precision, test_recall, test_auc]
                                     #if(val_acc > 0.35):
                                         #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                     #else:
