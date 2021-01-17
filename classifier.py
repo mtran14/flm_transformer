@@ -119,7 +119,7 @@ for seed in seeds:
                         
                         torch.manual_seed(seed)
                         
-                        n_fold = 5
+                        n_fold = 10
                         sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
                         tables = [pd.read_csv(s, header=None) for s in sets]
                         table = pd.concat(tables, ignore_index=True).values
@@ -396,7 +396,7 @@ for seed in seeds:
                     
                     torch.manual_seed(seed)
                     
-                    n_fold = 5
+                    n_fold = 10
                     sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
                     tables = [pd.read_csv(s, header=None) for s in sets]
                     table = pd.concat(tables, ignore_index=True).values
