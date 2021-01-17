@@ -87,7 +87,7 @@ model_name_gp = "result/result_transformer/gp_base_aalbert/states-200000.ckpt"
 model_name_gpau = "result/result_transformer/gpau_aalbert_3L/states-200000.ckpt"
 model_name_dict = {"flm":model_name_flm, "au":model_name_au, "gp":model_name_gp, "gpau":model_name_gpau}
 
-seeds = list(np.random.randint(0,1000,10))
+seeds = list(np.random.randint(0,1000,5))
 drugconds = ["PL","OT"]
 pretrain_option = [True,False]
 sources = ["gpau"]
