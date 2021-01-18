@@ -98,59 +98,59 @@ for seed in seeds:
         for drugcond in drugconds:
             for pretrain in pretrain_option:
                 if(pretrain):
-                    iter_results = {}
-                    for i in range(5):
-                        if(pretrain):
-                            #dim_dict = {"flm":272, "gp":88, "au":136}
-                            dim_dict = {"flm":272, "gp":84, "au":120, "gpau":144}
-                            inp_dim = sum([dim_dict[x] for x in sources])
-                        else:
-                            dim_dict = {"flm":136, "gp":11, "au":17}
-                            inp_dim = sum([dim_dict[x] for x in sources])                        
+                    if(pretrain):
+                        #dim_dict = {"flm":272, "gp":88, "au":136}
+                        dim_dict = {"flm":272, "gp":84, "au":120, "gpau":144}
+                        inp_dim = sum([dim_dict[x] for x in sources])
+                    else:
+                        dim_dict = {"flm":136, "gp":11, "au":17}
+                        inp_dim = sum([dim_dict[x] for x in sources])                        
+                
+                    config = {
+                                'mode'     : 'classification',
+                                'sample_rate' : 1,
+                                'hidden_size'       : 128,
+                                'pre_linear_dims'       : [20], 'post_linear_dims': [20],'drop':0.2,
+                                'concat': 1, 'layers': 3, 'linear': False,
+                            }
                     
-                        config = {
-                                    'mode'     : 'classification',
-                                    'sample_rate' : 1,
-                                    'hidden_size'       : 128,
-                                    'pre_linear_dims'       : [20], 'post_linear_dims': [20],'drop':0.2,
-                                    'concat': 1, 'layers': 3, 'linear': False,
-                                }
-                        
-                        
-                        
-                        torch.manual_seed(seed)
-                        
-                        n_fold = 10
-                        sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
-                        tables = [pd.read_csv(s, header=None) for s in sets]
-                        table = pd.concat(tables, ignore_index=True).values
-                        
-                        name_sets = ["data/train-clean-360_chunk_0.csv","data/train-clean-360_chunk_1.csv"]
-                        tables_name = [pd.read_csv(s, header=None) for s in name_sets]
-                        table_name = pd.concat(tables_name, ignore_index=True).values
-                        table_label = []
-                        for file in table_name[:,0]:
-                            current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
-                            table_label.append(current_label)
-                        
-                        table_filter = []
-                        for row in table:
-                            if(subset in row[0]):
-                                table_filter.append(row)
-                        table = np.array(table_filter)
-                        
-                        kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
-                        n_step = 200
-                        n_val = 16
-                        segment_size = 100
-                        bs = 8
-                        val_every = 40
-                        
-                        epochs = 10
-                        
-                        overall_w = []
-                        overall_f = []
-                        for train_index, test_index in kf.split(table_name, table_label):
+                    
+                    
+                    torch.manual_seed(seed)
+                    
+                    n_fold = 10
+                    sets = ["data/train-clean-schz_chunk_0.csv","data/train-clean-schz_chunk_1.csv"]
+                    tables = [pd.read_csv(s, header=None) for s in sets]
+                    table = pd.concat(tables, ignore_index=True).values
+                    
+                    name_sets = ["data/train-clean-360_chunk_0.csv","data/train-clean-360_chunk_1.csv"]
+                    tables_name = [pd.read_csv(s, header=None) for s in name_sets]
+                    table_name = pd.concat(tables_name, ignore_index=True).values
+                    table_label = []
+                    for file in table_name[:,0]:
+                        current_label = 0 if (int(re.search(r'\d{4}', file)[0]) >= 8000) else 1
+                        table_label.append(current_label)
+                    
+                    table_filter = []
+                    for row in table:
+                        if(subset in row[0]):
+                            table_filter.append(row)
+                    table = np.array(table_filter)
+                    
+                    kf = StratifiedKFold(n_splits=n_fold, shuffle=True, random_state=seed)
+                    n_step = 200
+                    n_val = 16
+                    segment_size = 100
+                    bs = 8
+                    val_every = 40
+                    
+                    epochs = 10
+                    
+                    overall_w = []
+                    overall_f = []
+                    for train_index, test_index in kf.split(table_name, table_label):
+                        iter_results = {}
+                        for i in range(5):
                             train_files_name = table_name[train_index[:-n_val]][:,0]
                             train_labels = []
                             train_files = filter_files(train_files_name, table[:,0], drugCond=drugcond)
@@ -380,13 +380,14 @@ for seed in seeds:
                             best_dev_auc = max(fold_dev_test_acc)
                             fold_test_acc = fold_dev_test_acc[best_dev_auc] #test acc w/ max dev acc
                             print("Fold Acc: ", fold_test_acc)
-                            overall_f.append(fold_test_acc) 
-                            overall_w.append(best_dev_auc)
-                        avg_score_fold = np.mean(overall_f, axis=0)
-                        avg_dev_score_fold = np.mean(overall_w)
-                        iter_results[avg_dev_score_fold] = avg_score_fold
-                    print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", iter_results[max(iter_results)])
-                    output.append([seed, subset, drugcond, pretrain, "N/A", iter_results[max(iter_results)]])
+                            #overall_f.append(fold_test_acc) 
+                            #overall_w.append(best_dev_auc)
+                            iter_results[best_dev_auc] = fold_test_acc
+                        best_fold_score = iter_results[max(iter_results)]
+                        overall_f.append(best_fold_score)
+                    avg_score_fold = np.mean(overall_f, axis=0)
+                    print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", avg_score_fold)
+                    output.append([seed, subset, drugcond, pretrain, "N/A", avg_score_fold])
                 else:
                     model_name = "N/A"
                     if(pretrain):
