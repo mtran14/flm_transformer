@@ -379,11 +379,12 @@ for seed in seeds:
                             
                             best_dev_auc = max(fold_dev_test_acc)
                             fold_test_acc = fold_dev_test_acc[best_dev_auc] #test acc w/ max dev acc
-                            print("Fold Acc: ", fold_test_acc)
+                            #print("Fold Acc: ", fold_test_acc)
                             #overall_f.append(fold_test_acc) 
                             #overall_w.append(best_dev_auc)
                             iter_results[best_dev_auc] = fold_test_acc
                         best_fold_score = iter_results[max(iter_results)]
+                        print("Fold Acc: ", best_fold_score)
                         overall_f.append(best_fold_score)
                     avg_score_fold = np.mean(overall_f, axis=0)
                     print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", avg_score_fold)
