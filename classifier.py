@@ -98,7 +98,8 @@ for seed in seeds:
         for drugcond in drugconds:
             for pretrain in pretrain_option:
                 if(pretrain):
-                    for i in range(1):
+                    iter_results = {}
+                    for i in range(5):
                         if(pretrain):
                             #dim_dict = {"flm":272, "gp":88, "au":136}
                             dim_dict = {"flm":272, "gp":84, "au":120, "gpau":144}
@@ -145,7 +146,7 @@ for seed in seeds:
                         bs = 8
                         val_every = 40
                         
-                        epochs = 40
+                        epochs = 10
                         
                         overall_w = []
                         overall_f = []
@@ -296,7 +297,10 @@ for seed in seeds:
                                              
                                         val_acc = accuracy_score(label_all_dev, pred_all_dev)
                                         val_f1 = f1_score(label_all_dev, pred_all_dev)  
-                                        val_auc = roc_auc_score(label_all_dev, pred_all_dev)
+                                        try:
+                                            val_auc = roc_auc_score(label_all_dev, pred_all_dev)
+                                        except:
+                                            val_auc = 0
                                         
                                         test_files_name = table_name[test_index][:,0]
                                         test_labels = []
@@ -361,7 +365,10 @@ for seed in seeds:
                                         test_f1 = f1_score(label_all_test, pred_all_test)    
                                         test_precision = precision_score(label_all_test, pred_all_test)
                                         test_recall = recall_score(label_all_test, pred_all_test)
-                                        test_auc = roc_auc_score(label_all_test, pred_all_test)
+                                        try:   
+                                            test_auc = roc_auc_score(label_all_test, pred_all_test)
+                                        except:
+                                            test_auc = 0
                                         print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test AUC ", test_auc, \
                                               " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
                                         fold_dev_test_acc[val_auc] = [test_acc, test_f1, test_precision, test_recall, test_auc]
@@ -369,12 +376,17 @@ for seed in seeds:
                                             #fold_dev_test_acc[val_acc+val_f1] = [test_acc, test_f1]
                                         #else:
                                             #fold_dev_test_acc[1-val_acc + 1-val_f1] = [test_acc, test_f1]
-                                            
-                            fold_test_acc = fold_dev_test_acc[max(fold_dev_test_acc)] #test acc w/ max dev acc
+                            
+                            best_dev_auc = max(fold_dev_test_acc)
+                            fold_test_acc = fold_dev_test_acc[best_dev_auc] #test acc w/ max dev acc
                             print("Fold Acc: ", fold_test_acc)
-                            overall_f.append(fold_test_acc)                            
-                        print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", np.mean(overall_f, axis=0))
-                        output.append([seed, subset, drugcond, pretrain, "N/A", np.mean(overall_f, axis=0)])
+                            overall_f.append(fold_test_acc) 
+                            overall_w.append(best_dev_auc)
+                        avg_score_fold = np.mean(overall_f, axis=0)
+                        avg_dev_score_fold = np.mean(overall_w)
+                        iter_results[avg_dev_score_fold] = avg_score_fold
+                    print(seed, subset, drugcond, pretrain, "N/A", "CV Test ACC: ", iter_results[max(iter_results)])
+                    output.append([seed, subset, drugcond, pretrain, "N/A", iter_results[max(iter_results)]])
                 else:
                     model_name = "N/A"
                     if(pretrain):
@@ -590,7 +602,11 @@ for seed in seeds:
                                          
                                     val_acc = accuracy_score(label_all_dev, pred_all_dev)
                                     val_f1 = f1_score(label_all_dev, pred_all_dev)
-                                    val_auc = roc_auc_score(label_all_dev, pred_all_dev)
+                                    try:
+                                        
+                                        val_auc = roc_auc_score(label_all_dev, pred_all_dev)
+                                    except:
+                                        val_auc = 0
                                     
                                     test_files_name = table_name[test_index][:,0]
                                     test_labels = []
@@ -661,8 +677,12 @@ for seed in seeds:
                                     test_acc = accuracy_score(label_all_test, pred_all_test)
                                     test_f1 = f1_score(label_all_test, pred_all_test)
                                     test_precision = precision_score(label_all_test, pred_all_test)
-                                    test_recall = recall_score(label_all_test, pred_all_test)  
-                                    test_auc = roc_auc_score(label_all_test, pred_all_test)
+                                    test_recall = recall_score(label_all_test, pred_all_test) 
+                                    try:
+                                        
+                                        test_auc = roc_auc_score(label_all_test, pred_all_test) 
+                                    except:
+                                        test_auc = 0
                                     print("Dev: ", val_acc, val_f1, "Test ACC ", test_acc, "Test AUC ", test_auc, \
                                           " P(1):", 1-sum(test_labels)/len(test_labels), " P(0):", sum(test_labels)/len(test_labels))
                                     fold_dev_test_acc[val_auc] = [test_acc, test_f1, test_precision, test_recall, test_auc]
