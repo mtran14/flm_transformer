@@ -63,17 +63,17 @@ runner.set_model()
 runner.load_model(model_name_au)
 current_transformer = runner.model
 current_transformer.eval()
-config = {
-    'downsample_rate':1,
-    'hidden_size':120,
-    'mask_proportion':0.15,
-    'mask_consecutive_min':1,
-    'mask_consecutive_max':1,
-    'mask_allow_overlap':True,
-    'mask_bucket_ratio':1.2,
-    'mask_frequency':0,
-    'noise_proportion':0.0
-}
+#config = {
+    #'downsample_rate':1,
+    #'hidden_size':120,
+    #'mask_proportion':0.15,
+    #'mask_consecutive_min':1,
+    #'mask_consecutive_max':1,
+    #'mask_allow_overlap':True,
+    #'mask_bucket_ratio':1.2,
+    #'mask_frequency':0,
+    #'noise_proportion':0.0
+#}
 #files_path = "/home/mtran/schz_segment/"
 files_path = "/shares/perception-working/minh/schz_segment/schz_segment/"
 for file in os.listdir(files_path):
@@ -82,7 +82,7 @@ for file in os.listdir(files_path):
         df = pd.read_csv(os.path.join(files_path, file))
         data = df.values[::3][:,396:413]
         data = torch.from_numpy(data.reshape(1,1,data.shape[0], data.shape[1]))
-        batch_is_valid, spec_masked, pos_enc, mask_label, attn_mask, spec_stacked = process_train_MAM_data(data, config)
+        batch_is_valid, spec_masked, pos_enc, mask_label, attn_mask, spec_stacked = process_train_MAM_data(data, config['transformer'])
         spec_masked, pos_enc, mask_label, attn_mask, spec_stacked = process_data([spec_masked, pos_enc, mask_label, attn_mask, spec_stacked])
         loss, pred_spec = current_transformer(spec_masked, pos_enc, mask_label, attn_mask, spec_stacked)
         print("Loss: ",loss)   
