@@ -79,7 +79,7 @@ def fast_position_encoding(seq_len, hidden_size, batch_size=None, padding_idx=No
 
 def process_train_MAM_data(spec, config=None):
     """Process training data for the masked acoustic model"""
-
+    
     dr = config['downsample_rate'] if config is not None else DR
     hidden_size = config['hidden_size'] if config is not None else HIDDEN_SIZE
     mask_proportion = config['mask_proportion'] if config is not None else MASK_PROPORTION
@@ -89,7 +89,7 @@ def process_train_MAM_data(spec, config=None):
     mask_bucket_ratio = config['mask_bucket_ratio'] if config is not None else MASK_BUCKET_RATIO
     mask_frequency = config['mask_frequency'] if config is not None else MASK_FREQUENCY
     noise_proportion = config['noise_proportion'] if config is not None else NOISE_PROPORTION
-    test_reconstruct = False
+    test_reconstruct = False    
 
     with torch.no_grad():
         if len(spec) == 2: # if self.duo_feature: dataloader will output `source_spec` and `target_spec`

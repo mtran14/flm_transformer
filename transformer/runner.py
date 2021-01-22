@@ -33,6 +33,7 @@ class Runner():
     def __init__(self, args, config, dataloader, dataloader_dev, ckpdir):
         
         self.device = torch.device('cuda') if (args.gpu and torch.cuda.is_available()) else torch.device('cpu')
+        
         if torch.cuda.is_available(): print('[Runner] - CUDA is available!')
         self.model_kept = []
         self.global_step = 1
@@ -139,6 +140,7 @@ class Runner():
         self.model.SpecHead.load_state_dict(ckpt['SpecHead'])
         self.optimizer.load_state_dict(ckpt['Optimizer'])
         self.global_step = ckpt['Global_step']
+        print("Finish loading model from ", ckptpth)
 
 
     def save_model(self, name='states', to_path=None):

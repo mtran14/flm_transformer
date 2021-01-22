@@ -21,7 +21,7 @@ import torch.nn as nn
 from functools import lru_cache
 from distutils.util import strtobool
 from utility.preprocessor import OnlinePreprocessor
-from transformer.model import TransformerConfig, TransformerModel
+from transformer.model import TransformerConfig, TransformerModel, TransformerForMaskedAcousticModel
 from transformer.model import TransformerSpecPredictionHead
 
 
@@ -285,7 +285,27 @@ class TransformerBaseWrapper(nn.Module):
 
         return x # (B, T, D) or (T, B, D)
 
+###############
+# SCHZ TRANSFORMER #
+###############
+class SCHZ_TRANSFORMER(TransformerBaseWrapper):
+    def __init__(self, options, inp_dim, config=None, online_config=None):
+        super(SCHZ_TRANSFORMER, self).__init__(options, inp_dim, config, online_config)
 
+        # Build model
+        self.model = TransformerForMaskedAcousticModel(self.model_config, self.inp_dim, self.inp_dim).to(self.device)
+        self.model.eval() if self.no_grad else self.model.train()
+        self.out_dim = self.hidden_size # This attribute is necessary, for pytorch-kaldi and run_downstream.py
+        
+        # Load from a PyTorch state_dict
+        if self.load: 
+            self.model = self.load_model(self.model, self.all_states['Transformer'])
+            print('[Transformer] - Number of parameters: ' + str(sum(p.numel() for p in self.model.parameters() if p.requires_grad)))
+            
+    def forward(self, spec_masked, pos_enc, mask_label, attn_mask, spec_stacked):
+        feat, pos_enc, attn_mask = self.process_input_data(x) # x shape: (B, T, D)
+        x = self.model(feat, pos_enc, attn_mask, output_all_encoded_layers=self.weighted_sum or self.select_layer != -1)          
+            
 ###############
 # TRANSFORMER #
 ###############
